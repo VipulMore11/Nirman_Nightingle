@@ -10,4 +10,8 @@ urlpatterns = [
     path('login/',views.login_view,name='login'),
     path('profile/',views.get_profile,name='get_profile'),
     path('update_profile/',views.update_profile,name='update_profile'),
+    path('logout/',views.logout_view,name='logout'),
+    path('verify_kyc/', views.verify_kyc, name='verify_kyc'),
+    path('submit_kyc/', views.submit_kyc, name='submit_kyc'),
+    path('kyc_status/', views.get_kyc, name='kyc_status'),
 ]

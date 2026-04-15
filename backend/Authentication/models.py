@@ -31,3 +31,48 @@ class User(AbstractUser):
 
     class Meta:
         db_table ='User'
+
+
+class KYC(models.Model):
+
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected'),
+    )
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='kyc')
+
+    # Identity Proofs
+    aadhaar_number = models.CharField(max_length=12, blank=True, null=True)
+    aadhaar_card_url = models.TextField(blank=True, null=True)
+
+    pan_number = models.CharField(max_length=10, blank=True, null=True)
+    pan_card_url = models.TextField(blank=True, null=True)
+
+    # Address Proof
+    address_line = models.TextField(blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    pincode = models.CharField(max_length=10, blank=True, null=True)
+
+    selfie_url = models.TextField(blank=True, null=True)
+
+    # Verification status
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+
+    # Admin verification
+    verified_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='verified_kyc'
+    )
+
+    verified_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'KYC'

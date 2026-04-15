@@ -1,9 +1,10 @@
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import UserSerializer,LoginSerializer, ProfileSerializer
-from .models import User
+from .serializers import KYCSerializer, UserSerializer,LoginSerializer, ProfileSerializer
+from .models import KYC, User
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from django.views.decorators.csrf import csrf_exempt
@@ -91,3 +92,34 @@ def update_profile(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({'Error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_kyc(request):
+    kyc = request.user.kyc
+    serializer = KYCSerializer(instance=kyc, data=request.data, partial=True)
+
+    if serializer.is_valid():
+        serializer.save(status='pending')
+        return Response(serializer.data)
+
+    return Response(serializer.errors, status=400)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_kyc(request):
+    user_id = request.data.get('user_id')
+    kyc = get_object_or_404(KYC, user_id=user_id)
+
+    kyc.status = 'verified'
+    kyc.verified_by = request.user
+    kyc.verified_at = timezone.now()
+    kyc.save()
+
+    return Response({"message": "KYC verified"})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_kyc(request):
+    serializer = KYCSerializer(request.user.kyc)
+    return Response(serializer.data)
