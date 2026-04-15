@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import User  
+from .models import KYC, User  
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
@@ -104,7 +104,13 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name','last_name', 'email', 'phone_no', 'profile_pic', 'age','sex', 'dob']
+        fields = ['first_name','last_name', 'email', 'phone_no', 'profile_pic', 'age','sex', 'dob', ]
+
+class KYCSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KYC
+        fields = '__all__'
+        read_only_fields = ['status', 'verified_by', 'verified_at']
 
 
 # ===== Tokenized Asset Marketplace Serializers =====

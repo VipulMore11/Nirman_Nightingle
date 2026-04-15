@@ -26,13 +26,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'Authentication.apps.AuthenticationConfig',
+
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'corsheaders',
 
     # Local apps
-    'Authentication',
+    # 'Authentication',
 ]
 
 MIDDLEWARE = [
@@ -114,7 +116,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-AUTH_USER_MODEL = 'Authentication.User'
+AUTH_USER_MODEL = 'authentication_app.User'
 
 # CORS Configuration
 CORS_ORIGIN_ALLOW_ALL = True
