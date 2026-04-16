@@ -43,4 +43,5 @@ urlpatterns = [
     
     # Blockchain endpoints
     path('submit_asa_transaction/', seller_views.submit_asa_transaction, name='submit_asa_transaction'),
+    path('get_pending_signature/<int:asset_id>/', seller_views.get_pending_signature, name='get_pending_signature'),
 ]

@@ -72,6 +72,67 @@ def get_my_asset_detail(request, asset_id):
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_pending_signature(request, asset_id):
+    """
+    Seller: Get pending ASA creation transaction bytes after admin approval.
+    
+    This is called by seller when they see their asset is "pending_signature" status.
+    The transaction bytes are signed with Pera wallet and submitted via submit_asa_transaction.
+    
+    Returns:
+    {
+        "txn_bytes": "base64_encoded_transaction",
+        "asset_name": "...",
+        "total_supply": int,
+        "creator_wallet": "..."
+    }
+    """
+    try:
+        from .services.transaction_service import create_asa_on_blockchain
+        
+        asset = Asset.objects.get(id=asset_id, owner=request.user)
+        
+        # Check if admin has approved but seller hasn't signed yet
+        if not asset.approved_by:
+            return Response(
+                {'error': 'Asset has not been approved by admin yet'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if asset.is_verified:
+            return Response(
+                {'error': 'Asset is already verified and published to blockchain'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Generate fresh transaction bytes for signing
+        try:
+            txn_data = create_asa_on_blockchain(asset)
+        except Exception as blockchain_error:
+            return Response({
+                'error': 'Failed to generate transaction for signing',
+                'details': str(blockchain_error)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'message': 'Ready to sign. Use these transaction bytes with Pera wallet.',
+            'asset_id': asset.id,
+            'txn_bytes': txn_data['txn_bytes'],
+            'asset_name': txn_data['asset_name'],
+            'total_supply': txn_data['total_supply'],
+            'creator_wallet': txn_data['creator_wallet'],
+            'approved_at': asset.approved_at.isoformat() if asset.approved_at else None,
+            'approved_by': asset.approved_by.username if asset.approved_by else None
+        }, status=status.HTTP_200_OK)
+        
+    except Asset.DoesNotExist:
+        return Response({'error': 'Asset not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 # ============= ADMIN ENDPOINTS =============
 
 @api_view(['GET'])
@@ -178,13 +239,25 @@ def submit_asa_transaction(request):
         "signed_txn": "base64_encoded_signed_transaction"
     }
     """
+    print(f"[DEBUG] ========== submit_asa_transaction endpoint called ==========")
+    print(f"[DEBUG] Request method: {request.method}")
+    print(f"[DEBUG] Request user: {request.user}")
+    print(f"[DEBUG] Request content-type: {request.content_type}")
+    
     try:
         from .services.transaction_service import submit_asa_to_blockchain
+        import json
         
+        print(f"[DEBUG] Request data: {request.data}")
         asset_id = request.data.get('asset_id')
         signed_txn = request.data.get('signed_txn')
         
+        print(f"[DEBUG] Received asset_id: {asset_id}")
+        print(f"[DEBUG] Received signed_txn type: {type(signed_txn)}")
+        print(f"[DEBUG] Received signed_txn length: {len(str(signed_txn)) if signed_txn else 0}")
+        
         if not asset_id or not signed_txn:
+            print(f"[ERROR] Missing required fields")
             return Response({
                 'error': 'asset_id and signed_txn are required'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -193,8 +266,13 @@ def submit_asa_transaction(request):
         
         # Submit signed transaction to blockchain
         try:
+            print(f"[DEBUG] Calling submit_asa_to_blockchain with txn type: {type(signed_txn)}")
             asa_id = submit_asa_to_blockchain(signed_txn)
+            print(f"[DEBUG] Successfully got asa_id: {asa_id}")
         except Exception as blockchain_error:
+            print(f"[ERROR] Blockchain submission failed: {str(blockchain_error)}")
+            import traceback
+            traceback.print_exc()
             return Response({
                 'error': 'Blockchain submission failed',
                 'details': str(blockchain_error)
@@ -219,6 +297,9 @@ def submit_asa_transaction(request):
     except Asset.DoesNotExist:
         return Response({'error': 'Asset not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
+        print(f"[ERROR] Unexpected error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 

@@ -153,11 +153,55 @@ def submit_asa_to_blockchain(signed_txn_base64):
         import base64
         import time
         
-        # Decode signed transaction
-        signed_txn_bytes = base64.b64decode(signed_txn_base64)
+        # Decode signed transaction from base64
+        # The Pera wallet returns msgpack-encoded bytes in base64 format
+        print(f"[DEBUG] Received signed_txn_base64 type: {type(signed_txn_base64)}")
+        print(f"[DEBUG] signed_txn_base64 length: {len(str(signed_txn_base64))}")
         
-        # Submit to testnet
+        # Handle both string and bytes input
+        if isinstance(signed_txn_base64, str):
+            # Add padding if necessary
+            padding = len(signed_txn_base64) % 4
+            if padding:
+                signed_txn_base64 = signed_txn_base64 + ('=' * (4 - padding))
+            
+            print(f"[DEBUG] Base64 string (first 50 chars): {signed_txn_base64[:50]}")
+            
+            try:
+                signed_txn_bytes = base64.b64decode(signed_txn_base64)
+            except Exception as decode_err:
+                print(f"[ERROR] Base64 decode failed: {str(decode_err)}")
+                raise ValueError(f"Invalid base64 encoding: {str(decode_err)}")
+        else:
+            # If already bytes, use as-is
+            signed_txn_bytes = signed_txn_base64
+        
+        print(f"[DEBUG] Signed txn bytes length: {len(signed_txn_bytes)}")
+        print(f"[DEBUG] First 20 bytes (hex): {signed_txn_bytes[:20].hex()}")
+        
+        # Validate that we have a reasonable transaction size (typically 200-500 bytes)
+        if len(signed_txn_bytes) < 50:
+            raise ValueError(f"Transaction too small ({len(signed_txn_bytes)} bytes) - likely corrupt")
+        
+        if len(signed_txn_bytes) > 10000:
+            raise ValueError(f"Transaction too large ({len(signed_txn_bytes)} bytes) - likely corrupt")
+        
+        # Submit to testnet - the bytes are already msgpack-encoded by Pera wallet
+        print(f"[DEBUG] Submitting {len(signed_txn_bytes)} bytes to testnet...")
+        
+        # The Pera wallet returns msgpack-encoded signed transaction bytes
+        # Validate the msgpack encoding to ensure it's not double-encoded
+        try:
+            from algosdk import encoding
+            decoded_txn = encoding.msgpack_decode(signed_txn_bytes)
+            print(f"[DEBUG] Msgpack validation successful")
+        except Exception as validate_err:
+            print(f"[DEBUG] Msgpack validation warning: {str(validate_err)}")
+        
+        # Send the msgpack-encoded bytes to the blockchain
+        # Use send_transaction which handles msgpack-encoded bytes correctly
         txn_id = algod_client.send_transaction(signed_txn_bytes)
+        print(f"[DEBUG] Transaction submitted with ID: {txn_id}")
         
         # Wait for confirmation (max 10 rounds)
         confirmed_txn = None
@@ -165,21 +209,30 @@ def submit_asa_to_blockchain(signed_txn_base64):
             try:
                 confirmed_txn = algod_client.pending_transaction_info(txn_id)
                 if confirmed_txn.get("confirmed-round"):
+                    print(f"[DEBUG] Transaction confirmed in round {confirmed_txn.get('confirmed-round')}")
                     break
-            except Exception:
-                pass
+            except Exception as poll_err:
+                print(f"[DEBUG] Poll attempt {i} failed: {str(poll_err)}")
             
             time.sleep(1)
         
-        if not confirmed_txn or "asset-index" not in confirmed_txn:
-            raise ValueError(f"Transaction {txn_id} failed or timed out")
+        if not confirmed_txn:
+            raise ValueError(f"Transaction {txn_id} timed out after 10 rounds")
+            
+        if "asset-index" not in confirmed_txn:
+            # Transaction might have failed but was still included in a block
+            print(f"[ERROR] Confirmed txn details: {confirmed_txn}")
+            raise ValueError(f"Transaction {txn_id} failed - no asset-index in confirmed transaction")
         
         # Extract the real ASA ID from the confirmed transaction
         asa_id = confirmed_txn["asset-index"]
+        print(f"[DEBUG] ASA created with ID: {asa_id}")
         
         return asa_id
         
     except ValueError as e:
+        print(f"[ERROR] ValueError: {str(e)}")
         raise ValueError(str(e))
     except Exception as e:
+        print(f"[ERROR] Exception type: {type(e).__name__}, Message: {str(e)}")
         raise ValueError(f"Failed to submit ASA to blockchain: {str(e)}")

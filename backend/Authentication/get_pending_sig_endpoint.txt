@@ -1,0 +1,59 @@
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_pending_signature(request, asset_id):
+    """
+    Seller: Get pending ASA creation transaction bytes after admin approval.
+    
+    This is called by seller when they see their asset is "pending_signature" status.
+    The transaction bytes are signed with Pera wallet and submitted via submit_asa_transaction.
+    
+    Returns:
+    {
+        "txn_bytes": "base64_encoded_transaction",
+        "asset_name": "...",
+        "total_supply": int,
+        "creator_wallet": "..."
+    }
+    """
+    try:
+        from .services.transaction_service import create_asa_on_blockchain
+        
+        asset = Asset.objects.get(id=asset_id, owner=request.user)
+        
+        # Check if admin has approved but seller hasn't signed yet
+        if not asset.approved_by:
+            return Response(
+                {'error': 'Asset has not been approved by admin yet'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if asset.is_verified:
+            return Response(
+                {'error': 'Asset is already verified and published to blockchain'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Generate fresh transaction bytes for signing
+        try:
+            txn_data = create_asa_on_blockchain(asset)
+        except Exception as blockchain_error:
+            return Response({
+                'error': 'Failed to generate transaction for signing',
+                'details': str(blockchain_error)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'message': 'Ready to sign. Use these transaction bytes with Pera wallet.',
+            'asset_id': asset.id,
+            'txn_bytes': txn_data['txn_bytes'],
+            'asset_name': txn_data['asset_name'],
+            'total_supply': txn_data['total_supply'],
+            'creator_wallet': txn_data['creator_wallet'],
+            'approved_at': asset.approved_at.isoformat() if asset.approved_at else None,
+            'approved_by': asset.approved_by.username if asset.approved_by else None
+        }, status=status.HTTP_200_OK)
+        
+    except Asset.DoesNotExist:
+        return Response({'error': 'Asset not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
