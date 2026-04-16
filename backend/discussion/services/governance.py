@@ -9,7 +9,7 @@ Governance business logic:
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Tuple
 
 from django.utils import timezone
 from discussion.models import Proposal, VoteRecord, Notification, Company

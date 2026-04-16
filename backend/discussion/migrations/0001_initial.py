@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.AddIndex(
-            model_name='votrecord',
+            model_name='voterecord',
             index=models.Index(fields=['proposal', 'voter_address'], name='discussion_vote_proposal_voter_idx'),
         ),
         migrations.AddIndex(

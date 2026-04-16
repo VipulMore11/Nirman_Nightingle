@@ -1,0 +1,695 @@
+Web3 provider not connected
+Web3 provider not connected
+Web3 provider not connected
+Web3 provider not connected
+Web3 provider not connected
+Web3 provider not connected
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Proposal 1 updated: VOTING
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=50000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=50100000000000000000000.00, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=49900000000000000000000.00, threshold=50000000000000000000000, result=False
+Large holder check: 0xaaaaaa... balance=100000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=0, threshold=50000000000000000000000, result=False
+New proposal created: 1
+Created 0 notifications for proposal 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=100000, threshold=50000000000000000000000, result=False
+User 0xaaaaaa... not large holder at snapshot
+New proposal created: 1
+User 0xaaaaaa... already voted on 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 voting still active
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=2)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 at max extensions
+New proposal created: 1
+Proposal 1 not in VOTING phase
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 at max extensions
+Proposal 1 updated: DIED
+Created 1 notifications for proposal 1
+Proposal 1 died (no quorum, no extensions left)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+Proposal 1 extended, not finalized yet
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: FAILED
+Proposal 1 finalized: FAILED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: PASSED
+Proposal 1 finalized: PASSED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.700000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.600000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.500000000000000E+23, threshold=160000000000000000000000, reached=False
+Web3 provider not connected
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Proposal 1 updated: VOTING
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=50000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=50100000000000000000000.00, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=49900000000000000000000.00, threshold=50000000000000000000000, result=False
+Large holder check: 0xaaaaaa... balance=100000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=0, threshold=50000000000000000000000, result=False
+New proposal created: 1
+Created 0 notifications for proposal 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=100000, threshold=50000000000000000000000, result=False
+User 0xaaaaaa... not large holder at snapshot
+New proposal created: 1
+User 0xaaaaaa... already voted on 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 voting still active
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=2)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 at max extensions
+New proposal created: 1
+Proposal 1 not in VOTING phase
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 at max extensions
+Proposal 1 updated: DIED
+Created 1 notifications for proposal 1
+Proposal 1 died (no quorum, no extensions left)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+Proposal 1 extended, not finalized yet
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: FAILED
+Proposal 1 finalized: FAILED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: PASSED
+Proposal 1 finalized: PASSED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.700000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.600000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.500000000000000E+23, threshold=160000000000000000000000, reached=False
+Web3 provider not connected
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Proposal 1 updated: VOTING
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=50000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=50100000000000000000000.00, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=49900000000000000000000.00, threshold=50000000000000000000000, result=False
+Large holder check: 0xaaaaaa... balance=100000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=0, threshold=50000000000000000000000, result=False
+New proposal created: 1
+Created 0 notifications for proposal 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=100000, threshold=50000000000000000000000, result=False
+User 0xaaaaaa... not large holder at snapshot
+New proposal created: 1
+User 0xaaaaaa... already voted on 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 voting still active
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=2)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 at max extensions
+New proposal created: 1
+Proposal 1 not in VOTING phase
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 at max extensions
+Proposal 1 updated: DIED
+Created 1 notifications for proposal 1
+Proposal 1 died (no quorum, no extensions left)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+Proposal 1 extended, not finalized yet
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: FAILED
+Proposal 1 finalized: FAILED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: PASSED
+Proposal 1 finalized: PASSED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.700000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.600000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.500000000000000E+23, threshold=160000000000000000000000, reached=False
+Web3 provider not connected
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Proposal 1 updated: VOTING
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=50000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=50100000000000000000000.00, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=49900000000000000000000.00, threshold=50000000000000000000000, result=False
+Large holder check: 0xaaaaaa... balance=100000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=0, threshold=50000000000000000000000, result=False
+New proposal created: 1
+Created 0 notifications for proposal 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=100000, threshold=50000000000000000000000, result=False
+User 0xaaaaaa... not large holder at snapshot
+New proposal created: 1
+User 0xaaaaaa... already voted on 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 voting still active
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=2)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 at max extensions
+New proposal created: 1
+Proposal 1 not in VOTING phase
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 at max extensions
+Proposal 1 updated: DIED
+Created 1 notifications for proposal 1
+Proposal 1 died (no quorum, no extensions left)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+Proposal 1 extended, not finalized yet
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: FAILED
+Proposal 1 finalized: FAILED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: PASSED
+Proposal 1 finalized: PASSED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.700000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.600000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.500000000000000E+23, threshold=160000000000000000000000, reached=False
+Web3 provider not connected
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Proposal 1 updated: VOTING
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=50000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=50100000000000000000000.00, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=49900000000000000000000.00, threshold=50000000000000000000000, result=False
+Large holder check: 0xaaaaaa... balance=100000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=0, threshold=50000000000000000000000, result=False
+New proposal created: 1
+Created 0 notifications for proposal 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=100000, threshold=50000000000000000000000, result=False
+User 0xaaaaaa... not large holder at snapshot
+New proposal created: 1
+User 0xaaaaaa... already voted on 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 voting still active
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=2)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 at max extensions
+New proposal created: 1
+Proposal 1 not in VOTING phase
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 at max extensions
+Proposal 1 updated: DIED
+Created 1 notifications for proposal 1
+Proposal 1 died (no quorum, no extensions left)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+Proposal 1 extended, not finalized yet
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: FAILED
+Proposal 1 finalized: FAILED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: PASSED
+Proposal 1 finalized: PASSED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.700000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.600000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.500000000000000E+23, threshold=160000000000000000000000, reached=False
+Web3 provider not connected
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+Error calculating quorum: [<class 'decimal.InvalidOperation'>]
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+Proposal 1 extended, not finalized yet
+New proposal created: 1
+Proposal 1 updated: DISCUSSION
+Proposal 1 started discussion
+New proposal created: 1
+Proposal 1 updated: DISCUSSION
+Proposal 1 started discussion
+New proposal created: 1
+Error fetching current block: 401 Client Error: Unauthorized for url: https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID
+Error starting voting: 401 Client Error: Unauthorized for url: https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Proposal 1 updated: VOTING
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=50000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=50100000000000000000000.00, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=49900000000000000000000.00, threshold=50000000000000000000000, result=False
+Large holder check: 0xaaaaaa... balance=100000000000000000000000, threshold=50000000000000000000000, result=True
+Large holder check: 0xaaaaaa... balance=0, threshold=50000000000000000000000, result=False
+New proposal created: 1
+Created 0 notifications for proposal 1
+New proposal created: 1
+Created 3 notifications for proposal 1
+New proposal created: 1
+Large holder check: 0xaaaaaa... balance=100000000000000000000000, threshold=50000000000000000000000, result=True
+New proposal created: 1
+User 0xaaaaaa... already voted on 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+New proposal created: 2
+New proposal created: 3
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 voting still active
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=2)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Proposal 1 at max extensions
+New proposal created: 1
+Proposal 1 not in VOTING phase
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 at max extensions
+Proposal 1 updated: DIED
+Created 1 notifications for proposal 1
+Proposal 1 died (no quorum, no extensions left)
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=100000000000000000000000, threshold=160000000000000000000000, reached=False
+Proposal 1 updated: VOTING
+Proposal 1 extended (count=1)
+Proposal 1 extended, not finalized yet
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: FAILED
+Proposal 1 finalized: FAILED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=3.00000000000000E+23, threshold=160000000000000000000000, reached=True
+Proposal 1 updated: PASSED
+Proposal 1 finalized: PASSED
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=200000000000000000000000, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.700000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.600000000000000E+23, threshold=160000000000000000000000, reached=True
+New proposal created: 1
+Proposal 1 updated: VOTING
+Quorum check for proposal 1: votes=1.500000000000000E+23, threshold=160000000000000000000000, reached=False
