@@ -42,7 +42,7 @@ export default function TradingPage() {
                           }`}
                         >
                           <p className="font-medium">{asset.name}</p>
-                          <p className="text-sm mt-1">${asset.currentPrice.toFixed(2)}</p>
+                          <p className="text-sm mt-1">${(asset.pricePerUnit ?? 0).toFixed(2)}</p>
                         </button>
                       ))}
                     </div>
@@ -57,17 +57,17 @@ export default function TradingPage() {
                       <div className="mt-4 flex items-baseline gap-4">
                         <div>
                           <p className="text-muted-foreground text-sm">Current Price</p>
-                          <p className="text-3xl font-bold text-foreground">${selectedAsset.currentPrice.toFixed(2)}</p>
+                          <p className="text-3xl font-bold text-foreground">${(selectedAsset.pricePerUnit ?? 0).toFixed(2)}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-sm">24h Change</p>
-                          <p className={`text-lg font-semibold ${selectedAsset.changePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {selectedAsset.changePercent >= 0 ? '+' : ''}{selectedAsset.changePercent.toFixed(2)}%
+                          <p className="text-muted-foreground text-sm">Expected Annual ROI</p>
+                          <p className={`text-lg font-semibold ${(selectedAsset.expectedAnnualROI ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {(selectedAsset.expectedAnnualROI ?? 0) >= 0 ? '+' : ''}{(selectedAsset.expectedAnnualROI ?? 0).toFixed(2)}%
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-sm">Shares Available</p>
-                          <p className="text-lg font-semibold text-foreground">{selectedAsset.sharesAvailable.toLocaleString()}</p>
+                          <p className="text-muted-foreground text-sm">Units Available</p>
+                          <p className="text-lg font-semibold text-foreground">{(selectedAsset.unitsAvailable ?? 0).toLocaleString()}</p>
                         </div>
                       </div>
                     </div>
@@ -88,7 +88,7 @@ export default function TradingPage() {
                         <BuyOrderForm
                           assetId={selectedAsset.id}
                           assetName={selectedAsset.name}
-                          currentPrice={selectedAsset.currentPrice}
+                          currentPrice={selectedAsset.pricePerUnit ?? 0}
                           availableBalance={50000}
                         />
                       </TabsContent>
@@ -97,7 +97,7 @@ export default function TradingPage() {
                         <SellOrderForm
                           assetId={selectedAsset.id}
                           assetName={selectedAsset.name}
-                          currentPrice={selectedAsset.currentPrice}
+                          currentPrice={selectedAsset.pricePerUnit ?? 0}
                           ownedQuantity={10.5}
                         />
                       </TabsContent>

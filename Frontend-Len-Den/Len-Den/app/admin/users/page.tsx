@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -127,9 +128,11 @@ export default function AdminUsersPage() {
                     {formatDate(user.joinedDate)}
                   </td>
                   <td className="text-center p-4">
-                    <Button size="sm" variant="ghost">
-                      View
-                    </Button>
+                    <Link href={`/admin/users/${user.id}`}>
+                      <Button size="sm" variant="ghost" className="hover:bg-accent hover:text-accent-foreground">
+                        View
+                      </Button>
+                    </Link>
                   </td>
                 </tr>
               ))}

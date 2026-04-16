@@ -3,34 +3,31 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('rajesh@example.com');
+  const [password, setPassword] = useState('password123');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      return;
-    }
-
-    try {
-      await login(email, password);
-      router.push('/dashboard');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
-    }
+    setTimeout(() => {
+      if (email && password) {
+        router.push('/dashboard');
+      } else {
+        setError('Please enter valid credentials');
+      }
+      setLoading(false);
+    }, 800);
   };
 
   return (
@@ -42,7 +39,7 @@ export default function LoginPage() {
             <span className="font-bold text-lg text-accent-foreground">AH</span>
           </div>
           <h1 className="text-2xl font-bold">LenDen</h1>
-          <p className="text-muted-foreground mt-2">Investor Login</p>
+          <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
 
         <Card className="p-8 border-border bg-card">
@@ -64,7 +61,6 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
-                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -79,14 +75,13 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
-                  disabled={isLoading}
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded" disabled={isLoading} />
+                <input type="checkbox" className="rounded" />
                 <span>Remember me</span>
               </label>
               <Link href="#" className="text-accent hover:underline">
@@ -97,9 +92,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full bg-accent hover:bg-accent/90"
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
@@ -109,14 +104,16 @@ export default function LoginPage() {
               Sign up
             </Link>
           </div>
-
-          <div className="mt-4 pt-4 border-t border-border text-center text-sm">
-            <span className="text-muted-foreground">Are you an admin? </span>
-            <Link href="/auth/admin-login" className="text-accent hover:underline font-medium">
-              Admin login
-            </Link>
-          </div>
         </Card>
+
+        {/* Demo Credentials */}
+        <div className="mt-6 p-4 rounded-lg bg-card border border-border/50">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Demo Credentials</p>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>Email: rajesh@example.com</p>
+            <p>Password: password123</p>
+          </div>
+        </div>
       </div>
     </div>
   );

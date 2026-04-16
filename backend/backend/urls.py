@@ -4,4 +4,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('Authentication.urls')),
+    # path('governance/', include('discussion.urls')),  # Temporarily disabled - requires web3
 ]
