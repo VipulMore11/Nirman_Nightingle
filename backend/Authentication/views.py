@@ -23,7 +23,14 @@ def signup_view(request):
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'role': new_user.role
+                'user': {
+                    'id': new_user.id,
+                    'email': new_user.email,
+                    'first_name': new_user.first_name,
+                    'last_name': new_user.last_name,
+                    'username': new_user.username,
+                    'role': new_user.role
+                }
             }, status=status.HTTP_200_OK)
         return Response(reg_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return Response({'message': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -51,7 +58,14 @@ def login_view(request):
             response = {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'role': user.role
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'username': user.username,
+                    'role': user.role
+                }
             }
             return Response(response, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -56,11 +56,14 @@ class Base64ImageField(serializers.ImageField):
         return extension
 
 class UserSerializer(serializers.ModelSerializer):
-    role = serializers.ChoiceField(choices=['user', 'admin'], required=False)
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('email', 'username','first_name','last_name', 'password','sex', 'role')
+        fields = ('id', 'email', 'username','first_name','last_name', 'password','sex', 'role', 'profile_pic')
+
+    def get_role(self, obj):
+        return obj.role
 
     def create(self, validated_data):
         email = validated_data.get('email')
@@ -69,10 +72,12 @@ class UserSerializer(serializers.ModelSerializer):
         last_name = validated_data.get('last_name')
         sex = validated_data.get('sex')
         password = validated_data.get('password')
+        profile_pic = validated_data.get('profile_pic', None)
         if not email:
             raise ValueError(_('The Email must be set'))
         User = get_user_model()
-        user = User(email=email, username=username, first_name=first_name, last_name=last_name, sex=sex, role=validated_data.get('role'))
+        # Force role to 'user' on signup - admins can only be created via Django admin
+        user = User(email=email, username=username, first_name=first_name, last_name=last_name, sex=sex, role='user', profile_pic=profile_pic)
         user.set_password(password)
         user.is_active= True
         user.save()
