@@ -6,8 +6,9 @@ import { mockAssets } from '@/lib/data/mockAssets';
 import { mockTransactions } from '@/lib/data/mockTransactions';
 import { formatCurrency, formatDate, formatPercent } from '@/lib/utils/formatters';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { TrendingUp, Download } from 'lucide-react';
+import { TrendingUp, Download, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function PortfolioPage() {
   const user = currentUser;
@@ -142,14 +143,21 @@ export default function PortfolioPage() {
               </thead>
               <tbody>
                 {userAssets.map(({ asset, holding, currentValue }) => (
-                  <tr key={holding.assetId} className="border-b border-border hover:bg-card/50">
-                    <td className="p-4">{asset?.name}</td>
-                    <td className="text-right p-4">
-                      {holding.unitsOwned.toLocaleString()}
+                  <tr
+                    key={holding.assetId}
+                    className="border-b border-border hover:bg-accent/5 cursor-pointer transition-colors group"
+                  >
+                    <td className="p-4">
+                      <Link
+                        href={`/portfolio/holdings/${holding.assetId}`}
+                        className="flex items-center gap-2 font-medium hover:text-accent transition-colors"
+                      >
+                        {asset?.name}
+                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-70 transition-opacity" />
+                      </Link>
                     </td>
-                    <td className="text-right p-4 font-medium">
-                      {formatCurrency(currentValue)}
-                    </td>
+                    <td className="text-right p-4">{holding.unitsOwned.toLocaleString()}</td>
+                    <td className="text-right p-4 font-medium">{formatCurrency(currentValue)}</td>
                     <td className="text-right p-4 text-muted-foreground">
                       {formatPercent((currentValue / totalValue) * 100)}
                     </td>
@@ -178,7 +186,7 @@ export default function PortfolioPage() {
                   border: '1px solid #2d3748',
                   borderRadius: '8px',
                 }}
-                formatter={(value) => [formatCurrency(value), 'Portfolio Value']}
+                formatter={(value) => [formatCurrency(value as number), 'Portfolio Value']}
               />
               <Legend />
               <Line
