@@ -224,16 +224,16 @@ export default function ListAssetPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-screen-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <Button 
         variant="ghost" 
         onClick={() => router.back()} 
-        className="gap-2 mb-8 -ml-4 text-muted-foreground hover:text-foreground"
+        className="gap-2 -ml-4 text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Marketplace
       </Button>
 
-      <div className="mb-10">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">List New Asset</h1>
         <p className="text-muted-foreground">Provide comprehensive details to attract investors to your asset.</p>
       </div>

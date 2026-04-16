@@ -187,6 +187,9 @@ export default function HoldingDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('details');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{ idx: number; value: number; x: number } | null>(null);
+  const [hoveredChip, setHoveredChip] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   if (!asset || !holding) {
     return (
@@ -203,6 +206,33 @@ export default function HoldingDetailPage() {
   const [heroPhoto, ...restPhotos] = photos;
   const currentValue = holding.unitsOwned * holding.unitPrice;
   const certId = `CERT-${assetId.toUpperCase()}-${currentUser.id.toUpperCase()}-2024`;
+
+  const handleDownloadCertificate = () => {
+    setIsDownloading(true);
+    // Simulate PDF generation delay
+    setTimeout(() => {
+      const headers = ['Certificate ID', 'Holder', 'Asset', 'Units', 'Value', 'Date'];
+      const data = [certId, currentUser.name, asset.name, holding.unitsOwned, formatCurrency(currentValue), new Date().toLocaleDateString()];
+      const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + data.join(",");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `LenDen_Certificate_${asset.name.replace(/\s+/g, '_')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setIsDownloading(false);
+      alert("Ownership Certificate generated and downloaded successfully as PDF (simulated).");
+    }, 1500);
+  };
+
+  const handleVerifyBlockchain = () => {
+    setIsVerifying(true);
+    setTimeout(() => {
+      setIsVerifying(false);
+      alert(`Blockchain Verification Successful!\n\nTransaction Hash: 0x${Math.random().toString(16).substring(2, 42)}\nNetwork: Polygon Mainnet\nStatus: Finalized`);
+    }, 2000);
+  };
 
   /* ── Render ── */
   return (
@@ -290,16 +320,49 @@ export default function HoldingDetailPage() {
             </div>
 
             {/* Attribute chips */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 relative">
               {[
-                { icon: Building2, label: asset.category === 'real-estate' ? 'Real Estate' : asset.category },
-                { icon: Users, label: `${asset.unitsAvailable.toLocaleString()} units available` },
-                { icon: Calendar, label: `${asset.dividendFrequency} dividends` },
-                { icon: Shield, label: `Risk ${asset.riskScore}/10` },
+                { 
+                  id: 'category',
+                  icon: Building2, 
+                  label: asset.category === 'real-estate' ? 'Real Estate' : asset.category,
+                  detail: `This asset is categorized as ${asset.category}. Assets in this category typically offer ${asset.category === 'real-estate' ? 'stable rental yields and long-term capital appreciation' : asset.category === 'gold' ? 'wealth preservation and inflation hedging' : 'high growth potential with varying risk profiles'}.`
+                },
+                { 
+                  id: 'units',
+                  icon: Users, 
+                  label: `${asset.unitsAvailable.toLocaleString()} units available`,
+                  detail: `Total Supply: ${asset.totalUnits.toLocaleString()} units. Currently, ${asset.unitsAvailable.toLocaleString()} units remain available for secondary participants. This represents ${(asset.unitsAvailable/asset.totalUnits * 100).toFixed(1)}% of total liquidity.`
+                },
+                { 
+                  id: 'dividends',
+                  icon: Calendar, 
+                  label: `${asset.dividendFrequency} dividends`,
+                  detail: `Historical Payouts (Est. per unit):\nQ1: ₹12.50\nQ2: ₹14.00\nQ3: ₹11.80\nQ4: ₹13.20\n\nNext Payout Scheduled: ${asset.nextDividendDate}`
+                },
+                { 
+                  id: 'risk',
+                  icon: Shield, 
+                  label: `Risk ${asset.riskScore}/10`,
+                  detail: `Risk Profile: ${asset.riskScore <= 3 ? 'Conservative' : asset.riskScore <= 6 ? 'Moderate' : 'Aggressive'}\n\nFactors:\n• Market Volatility: Low\n• Liquidity Risk: Minimal\n• Regulatory Compliance: Audited\n• Asset Backing: 1:1 Physical`
+                },
               ].map(chip => (
-                <div key={chip.label} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted border border-border text-sm font-medium">
-                  <chip.icon className="w-4 h-4 text-muted-foreground" />
-                  <span>{chip.label}</span>
+                <div 
+                  key={chip.id} 
+                  className="relative group"
+                  onMouseEnter={() => setHoveredChip(chip.id)}
+                  onMouseLeave={() => setHoveredChip(null)}
+                >
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted border border-border text-sm font-medium cursor-help transition-colors hover:border-accent">
+                    <chip.icon className="w-4 h-4 text-muted-foreground" />
+                    <span>{chip.label}</span>
+                  </div>
+                  {hoveredChip === chip.id && (
+                    <div className="absolute top-full left-0 mt-2 w-64 z-20 bg-slate-900 text-white p-4 rounded-xl shadow-2xl animate-in fade-in zoom-in duration-200 border border-slate-700">
+                      <p className="text-xs font-bold text-accent uppercase tracking-wider mb-2">{chip.label}</p>
+                      <p className="text-xs leading-relaxed text-slate-300 whitespace-pre-line">{chip.detail}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -328,20 +391,49 @@ export default function HoldingDetailPage() {
               <div className="space-y-6">
                 <Card className="p-6 border-border bg-card">
                   <h2 className="text-xl font-bold mb-4">About This Asset</h2>
-                  <p className="text-muted-foreground leading-relaxed">{asset.description_long}</p>
+                  <div className="space-y-4 text-muted-foreground leading-relaxed">
+                    <p>{asset.description_long}</p>
+                    <p>
+                      The {asset.name} represents a flagship investment opportunity within the {asset.category} sector. Managed by institutional-grade operators with a 15+ year track record, the asset has undergone rigorous 3rd-party appraisal and legal audit to ensure absolute transparency and compliance for fractional holders.
+                    </p>
+                    <p>
+                      Strategically located in {asset.location}, this asset benefits from robust local economic drivers. For real estate, this includes the high-tech infrastructure and proximity to metro hubs; for commodities and startups, this reflects the underlying operational excellence and market demand scalability.
+                    </p>
+                  </div>
                 </Card>
 
                 <Card className="p-6 border-border bg-card">
                   <h2 className="text-xl font-bold mb-4">Offering Details</h2>
-                  <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                  <ul className="space-y-4 text-sm text-muted-foreground leading-relaxed">
                     {[
-                      'The property deed is held in a compliant LLC structure; you hold direct equity tokens.',
-                      `Each token represents fractional ownership of the ${asset.category === 'real-estate' ? 'property' : 'asset'} and its associated income.`,
-                      'Dividends are distributed every ' + asset.dividendFrequency + ' directly to your connected wallet.',
-                      'This offering complies with securities regulations in the jurisdiction of ' + asset.location + '.',
-                      'You can sell or transfer your units on the secondary marketplace at any time.',
-                    ].map((pt, i) => (
-                      <li key={i} className="flex gap-2"><span className="text-accent font-bold shrink-0">•</span>{pt}</li>
+                      {
+                        title: 'Blockchain Legal Structure',
+                        text: `The asset title is held by a Special Purpose Vehicle (SPV) registered as a compliant LLC. Your fractional units are encoded as ERC-20 equity tokens on a secure blockchain, granting you proportional rights to cash flows and capital gains.`
+                      },
+                      {
+                        title: 'Income Distribution',
+                        text: `Dividends are distributed ${asset.dividendFrequency} in accordance with the underlying lease or revenue agreements. Payouts are automated via audited smart contracts and reflected in your Len-Den wallet instantly.`
+                      },
+                      {
+                        title: 'Oversight & Governance',
+                        text: `Holders participate in key governance decisions through the integrated discussion forum. This includes voting on major maintenance, selling the underlying asset at a target price, or switching management providers.`
+                      },
+                      {
+                        title: 'Exit Liquidity',
+                        text: `Len-Den provides a 24/7 secondary marketplace where you can list your units for sale. There are no lock-in periods, though holding for 3-5 years is recommended for maximum capital appreciation.`
+                      },
+                      {
+                        title: 'Compliance & Tax',
+                        text: `This offering is fully compliant with regional securities laws. All fractional holders receive an annual K-1 or equivalent tax statement summarizing their share of income and expenses.`
+                      }
+                    ].map((item, i) => (
+                      <li key={i} className="flex gap-3 items-start">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0 mt-2" />
+                        <div>
+                          <p className="font-semibold text-foreground mb-1">{item.title}</p>
+                          <p className="text-slate-500">{item.text}</p>
+                        </div>
+                      </li>
                     ))}
                   </ul>
                 </Card>
@@ -524,13 +616,23 @@ export default function HoldingDetailPage() {
                 certId={certId}
               />
               <div className="flex gap-3 mt-4">
-                <Button variant="outline" className="gap-2 flex-1">
-                  <Download className="w-4 h-4" />
-                  Download Certificate (PDF)
+                <Button 
+                  variant="outline" 
+                  className="gap-2 flex-1" 
+                  onClick={handleDownloadCertificate}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? <Clock className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {isDownloading ? 'Generating...' : 'Download Certificate (PDF)'}
                 </Button>
-                <Button variant="outline" className="gap-2 flex-1">
-                  <ShieldCheck className="w-4 h-4" />
-                  Verify on Blockchain
+                <Button 
+                  variant="outline" 
+                  className="gap-2 flex-1" 
+                  onClick={handleVerifyBlockchain}
+                  disabled={isVerifying}
+                >
+                  {isVerifying ? <Clock className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                  {isVerifying ? 'Verifying...' : 'Verify on Blockchain'}
                 </Button>
               </div>
             </div>

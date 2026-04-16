@@ -109,15 +109,15 @@ export function SellOrderForm({
           <div className="bg-secondary rounded-lg p-4 space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Gross Proceeds</span>
-              <span className="font-medium text-foreground">${totalProceeds.toFixed(2)}</span>
+              <span className="font-medium text-foreground">₹{totalProceeds.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Trading Fee (1%)</span>
-              <span className="font-medium text-destructive">-${estimatedFee.toFixed(2)}</span>
+               <span className="font-medium text-destructive">-₹{estimatedFee.toFixed(2)}</span>
             </div>
             <div className="border-t border-border pt-3 flex justify-between">
               <span className="font-semibold text-foreground">Net Proceeds</span>
-              <span className="font-bold text-green-600 text-lg">${netProceeds.toFixed(2)}</span>
+              <span className="font-bold text-green-600 text-lg">₹{netProceeds.toFixed(2)}</span>
             </div>
           </div>
 
@@ -156,11 +156,11 @@ export function SellOrderForm({
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Price:</span>
-                  <span className="font-medium">${(orderType === 'market' ? currentPrice : limitPrice).toFixed(2)}</span>
+                   <span className="font-medium">₹{(orderType === 'market' ? currentPrice : limitPrice).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm font-semibold border-t border-border pt-2">
                   <span>Net Proceeds:</span>
-                  <span className="text-green-600">${netProceeds.toFixed(2)}</span>
+                    <span className="text-green-600">₹{netProceeds.toFixed(2)}</span>
                 </div>
               </div>
               <button

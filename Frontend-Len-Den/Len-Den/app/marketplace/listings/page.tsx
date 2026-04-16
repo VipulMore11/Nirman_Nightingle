@@ -7,7 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { mockAssets } from '@/lib/data/mockAssets';
 import { formatCurrency, formatPercent } from '@/lib/utils/formatters';
-import { Search, Filter, TrendingUp, Shield, Plus, Users, MessageSquare, LayoutGrid } from 'lucide-react';
+import { Search, Filter, TrendingUp, Shield, Plus, Users, MessageSquare, LayoutGrid, Building2, Coins, Palette, Rocket, Zap } from 'lucide-react';
+
+const CATEGORY_PHOTOS: Record<string, string[]> = {
+  'real-estate': ['https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80'],
+  'gold':        ['https://images.unsplash.com/photo-1610375461369-d613b564f4c0?w=800&q=80'],
+  'art':         ['https://images.unsplash.com/photo-1554188248-986adbb73be4?w=800&q=80'],
+  'startup':     ['https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&q=80'],
+  'commodities': ['https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&q=80'],
+};
 
 export default function MarketplaceListingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -126,7 +134,7 @@ export default function MarketplaceListingsPage() {
           
           return (
             <Link key={asset.id} href={href}>
-              <Card className={`h-full border-border bg-card hover:border-accent transition-all cursor-pointer overflow-hidden group relative ${isSeller ? 'border-accent/40 bg-accent/5' : ''}`}>
+              <Card className={`h-full border-border bg-card hover:border-accent transition-all cursor-pointer overflow-hidden p-0 py-0 gap-0 group relative ${isSeller ? 'border-accent/40 bg-accent/5' : ''}`}>
                 {isSeller && (
                   <div className="absolute top-3 right-3 z-20">
                     <span className="px-2 py-1 rounded bg-accent text-accent-foreground text-[10px] font-bold uppercase tracking-wider shadow-sm">
@@ -134,16 +142,15 @@ export default function MarketplaceListingsPage() {
                     </span>
                   </div>
                 )}
-                {/* Image Placeholder */}
-                <div className="h-40 bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center relative overflow-hidden">
-                  <div className="text-center z-10">
-                    <div className="text-4xl font-bold text-slate-400 opacity-50">
-                      {asset.category === 'real-estate' && '🏢'}
-                      {asset.category === 'gold' && '💰'}
-                      {asset.category === 'art' && '🎨'}
-                      {asset.category === 'startup' && '🚀'}
-                      {asset.category === 'commodities' && '⚡'}
-                    </div>
+                {/* Image Flush to Top */}
+                <div className="h-48 relative overflow-hidden">
+                  <img 
+                    src={CATEGORY_PHOTOS[asset.category]?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80'} 
+                    alt={asset.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                    <p className="text-white text-xs font-medium">Click to view offering</p>
                   </div>
                 </div>
 
@@ -175,21 +182,25 @@ export default function MarketplaceListingsPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4 text-green-500" />
+                  <div className="grid grid-cols-2 gap-4 text-sm mt-auto">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+                        <TrendingUp className="w-4 h-4 text-green-500" />
+                      </div>
                       <div>
-                        <p className="text-muted-foreground text-xs">ROI</p>
-                        <p className="font-semibold text-green-500">
+                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-tighter">ROI</p>
+                        <p className="font-bold text-green-500">
                           {formatPercent(asset.expectedAnnualROI)}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Shield className="w-4 h-4 text-blue-500" />
+                    <div className="flex items-center gap-2">
+                       <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <Shield className="w-4 h-4 text-blue-500" />
+                      </div>
                       <div>
-                        <p className="text-muted-foreground text-xs">Risk</p>
-                        <p className="font-semibold text-blue-500">{asset.riskScore}/10</p>
+                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-tighter">Risk</p>
+                        <p className="font-bold text-blue-500">{asset.riskScore}/10</p>
                       </div>
                     </div>
                   </div>

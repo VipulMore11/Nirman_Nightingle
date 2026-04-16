@@ -12,8 +12,25 @@ import { CheckCircle, XCircle, Clock, AlertCircle, FileText } from 'lucide-react
 export default function AdminVerificationPage() {
   const [selectedListing, setSelectedListing] = useState(mockPendingListings[0]?.id);
   const [actionType, setActionType] = useState<'approve' | 'reject' | 'more-docs' | null>(null);
+  const [listings, setListings] = useState(mockPendingListings);
 
-  const currentListing = mockPendingListings.find((l) => l.id === selectedListing);
+  const currentListing = listings.find((l) => l.id === selectedListing);
+
+  const handleConfirm = () => {
+    if (!actionType || !selectedListing) return;
+
+    setListings(prev => prev.map(l => {
+      if (l.id === selectedListing) {
+        if (actionType === 'approve') return { ...l, status: 'approved' };
+        if (actionType === 'reject') return { ...l, status: 'rejected' };
+        if (actionType === 'more-docs') return { ...l, status: 'pending-documents' };
+      }
+      return l;
+    }));
+
+    alert(`${actionType.charAt(0).toUpperCase() + actionType.slice(1)} Successful!`);
+    setActionType(null);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -58,7 +75,7 @@ export default function AdminVerificationPage() {
           </div>
 
           <div className="divide-y divide-border max-h-96 overflow-y-auto">
-            {mockPendingListings.map((listing) => (
+            {listings.map((listing) => (
               <button
                 key={listing.id}
                 onClick={() => setSelectedListing(listing.id)}
@@ -200,6 +217,7 @@ export default function AdminVerificationPage() {
                   <div className="flex gap-2 mt-3">
                     <Button
                       size="sm"
+                      onClick={handleConfirm}
                       className={
                         actionType === 'approve'
                           ? 'bg-green-600 hover:bg-green-700'

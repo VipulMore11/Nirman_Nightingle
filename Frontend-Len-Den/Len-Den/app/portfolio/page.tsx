@@ -34,12 +34,12 @@ export default function PortfolioPage() {
 
   // Performance chart data (simulated)
   const performanceData = [
-    { date: 'Jan', portfolio: 2300000 },
-    { date: 'Feb', portfolio: 2450000 },
-    { date: 'Mar', portfolio: 2380000 },
-    { date: 'Apr', portfolio: 2550000 },
-    { date: 'May', portfolio: 2680000 },
-    { date: 'Jun', portfolio: 2750000 },
+    { date: 'Jan', portfolio: 18000 },
+    { date: 'Feb', portfolio: 19500 },
+    { date: 'Mar', portfolio: 18800 },
+    { date: 'Apr', portfolio: 20500 },
+    { date: 'May', portfolio: 21800 },
+    { date: 'Jun', portfolio: 23500 },
   ];
 
   const userDividends = mockTransactions.filter(
@@ -48,6 +48,28 @@ export default function PortfolioPage() {
 
   const totalDividends = userDividends.reduce((sum, t) => sum + t.totalAmount, 0);
 
+  const handleExport = () => {
+    // Basic CSV export logic
+    const headers = ['Asset Name', 'Units Owned', 'Avg Price', 'Current Value', '% of Portfolio'];
+    const rows = userAssets.map(item => [
+      item.asset?.name,
+      item.holding.unitsOwned,
+      formatCurrency(item.holding.unitPrice),
+      formatCurrency(item.currentValue),
+      `${((item.currentValue / totalValue) * 100).toFixed(1)}%`
+    ]);
+
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Len-Den_Portfolio_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -55,7 +77,7 @@ export default function PortfolioPage() {
           <h1 className="text-3xl font-bold mb-1">Portfolio</h1>
           <p className="text-muted-foreground">Detailed analysis of your investments</p>
         </div>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2" onClick={handleExport}>
           <Download className="w-4 h-4" />
           Export Report
         </Button>
@@ -107,19 +129,36 @@ export default function PortfolioPage() {
                     <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                   ))}
                 </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#1a1f3a', 
+                    border: '1px solid #2d3748', 
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '11px',
+                    padding: '8px'
+                  }}
+                  itemStyle={{ color: '#fff', fontSize: '11px' }}
+                  formatter={(value: number, name: string, props: any) => {
+                    const amount = props.payload.fullValue;
+                    return [`${formatCurrency(amount)} (${value.toFixed(1)}%)`, name];
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-1.5">
               {pieData.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
+                <div key={item.name} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 overflow-hidden mr-2">
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: colors[index % colors.length] }}
                     />
-                    <span className="text-muted-foreground">{item.name}</span>
+                    <span className="text-muted-foreground truncate" title={item.name}>
+                      {item.name}
+                    </span>
                   </div>
-                  <span className="font-medium">{item.value.toFixed(1)}%</span>
+                  <span className="font-medium shrink-0">{item.value.toFixed(1)}%</span>
                 </div>
               ))}
             </div>
@@ -179,7 +218,7 @@ export default function PortfolioPage() {
             <LineChart data={performanceData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2d3748" />
               <XAxis dataKey="date" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" tickFormatter={(value) => `₹${(value / 100000).toFixed(1)}L`} />
+              <YAxis stroke="#94a3b8" tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#1a1f3a',

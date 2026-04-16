@@ -100,7 +100,6 @@ export default function AdminUsersPage() {
                 <th className="text-left p-4 font-semibold">Email</th>
                 <th className="text-left p-4 font-semibold">Country</th>
                 <th className="text-center p-4 font-semibold">KYC Status</th>
-                <th className="text-right p-4 font-semibold">Invested</th>
                 <th className="text-left p-4 font-semibold">Joined</th>
                 <th className="text-center p-4 font-semibold">Actions</th>
               </tr>
@@ -121,9 +120,6 @@ export default function AdminUsersPage() {
                   <td className="p-4 text-muted-foreground">{user.email}</td>
                   <td className="p-4">{user.country}</td>
                   <td className="p-4 text-center">{getKycBadge(user.kycStatus)}</td>
-                  <td className="text-right p-4 font-semibold">
-                    ${(user.totalInvested / 1000000).toFixed(1)}M
-                  </td>
                   <td className="p-4 text-muted-foreground text-sm">
                     {formatDate(user.joinedDate)}
                   </td>
@@ -160,11 +156,9 @@ export default function AdminUsersPage() {
           </p>
         </Card>
         <Card className="p-4 border-border bg-card">
-          <p className="text-muted-foreground text-xs mb-1">Total Invested</p>
+          <p className="text-muted-foreground text-xs mb-1">Approval Rate</p>
           <p className="text-2xl font-bold">
-            ${(
-              mockUsers.reduce((sum, u) => sum + u.totalInvested, 0) / 1000000
-            ).toFixed(0)}M
+            {((mockUsers.filter(u => u.kycStatus === 'verified').length / mockUsers.length) * 100).toFixed(0)}%
           </p>
         </Card>
       </div>

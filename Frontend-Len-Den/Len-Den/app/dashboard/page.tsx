@@ -7,6 +7,7 @@ import { currentUser, mockUsers } from '@/lib/data/mockUsers';
 import { mockAssets } from '@/lib/data/mockAssets';
 import { mockTransactions } from '@/lib/data/mockTransactions';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Plus, IndianRupee } from 'lucide-react';
+import { GuidedTour } from '@/components/common';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -30,14 +31,15 @@ export default function DashboardPage() {
     .reverse();
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8 relative">
+      <GuidedTour />
       {/* Welcome Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-1">Welcome back, {user.name.split(' ')[0]}</h1>
           <p className="text-muted-foreground">Here's your portfolio overview</p>
         </div>
-        <Link href="/marketplace/listings">
+        <Link href="/marketplace/listings" id="add-asset-btn">
           <Button className="bg-accent hover:bg-accent/90 gap-2">
             <Plus className="w-4 h-4" />
             Add Asset
@@ -47,7 +49,7 @@ export default function DashboardPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-6 border-border bg-card">
+        <Card id="portfolio-value" className="p-6 border-border bg-card">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground text-sm mb-1">Portfolio Value</p>
@@ -71,7 +73,7 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        <Card className="p-6 border-border bg-card">
+        <Card id="unrealized-gains" className="p-6 border-border bg-card">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground text-sm mb-1">Unrealized Gains</p>
@@ -101,27 +103,63 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Holdings */}
-        <Card className="lg:col-span-2 border-border bg-card">
-          <div className="p-6 border-b border-border">
+        <Card id="your-holdings" className="lg:col-span-2 border-border bg-card">
+          <div className="p-6 border-b border-border flex items-center justify-between">
             <h2 className="text-lg font-semibold">Your Holdings</h2>
+            <div className="flex gap-8 text-xs font-medium text-muted-foreground mr-4">
+              <span className="w-20 text-right">P&L</span>
+              <span className="w-24 text-right">Total P&L</span>
+              <span className="w-24 text-right">Value</span>
+            </div>
           </div>
           <div className="divide-y divide-border">
-            {userAssets.map(({ asset, holding, currentValue }) => (
-              <div key={holding.assetId} className="p-6 hover:bg-card/50 transition-colors">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{asset?.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {holding.unitsOwned.toLocaleString()} units
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{formatCurrency(currentValue)}</p>
-                    <p className="text-sm text-green-500">+{formatPercent((currentValue - holding.unitsOwned * holding.unitPrice * 0.95) / (holding.unitsOwned * holding.unitPrice * 0.95))}</p>
+            {userAssets.map(({ asset, holding, currentValue }) => {
+              const buyValue = holding.unitsOwned * holding.unitPrice * 0.95; // Simulating lower entry price
+              const pl = currentValue - buyValue;
+              const plPercentage = (pl / buyValue) * 100;
+              
+              // Calculate dividends for this specific asset
+              const assetDividends = mockTransactions
+                .filter(t => t.userId === user.id && t.assetId === holding.assetId && t.type === 'dividend')
+                .reduce((sum, t) => sum + t.totalAmount, 0);
+              const totalPL = pl + assetDividends;
+
+              return (
+                <div key={holding.assetId} className="p-6 hover:bg-accent/5 transition-colors">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate">{asset?.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {holding.unitsOwned.toLocaleString()} units
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-8">
+                      <div className="w-20 text-right">
+                        <p className={`text-sm font-medium ${pl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {pl >= 0 ? '+' : ''}{formatCurrency(pl)}
+                        </p>
+                        <p className={`text-[10px] ${pl >= 0 ? 'text-green-500/80' : 'text-red-500/80'}`}>
+                          {pl >= 0 ? '+' : ''}{plPercentage.toFixed(1)}%
+                        </p>
+                      </div>
+
+                      <div className="w-24 text-right">
+                        <p className={`text-sm font-bold ${totalPL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {totalPL >= 0 ? '+' : ''}{formatCurrency(totalPL)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Incl. Dividends</p>
+                      </div>
+
+                      <div className="w-24 text-right">
+                        <p className="font-bold text-foreground">{formatCurrency(currentValue)}</p>
+                        <p className="text-[10px] text-muted-foreground">Market Value</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="p-6 bg-card/50 border-t border-border">
             <Link href="/portfolio">

@@ -23,8 +23,8 @@ const openOrders = [
     asset: 'Dubai Real Estate Fund',
     type: 'sell',
     quantity: 10,
-    limitPrice: 1850,
-    currentPrice: 1820,
+    limitPrice: 850,
+    currentPrice: 820,
     status: 'pending',
     createdAt: '2024-04-14T14:20:00Z',
     expiresAt: '2024-04-21T23:59:59Z'
@@ -33,7 +33,7 @@ const openOrders = [
     id: '3',
     asset: 'Premium Gold Bullion',
     type: 'buy',
-    quantity: 2.25,
+    quantity: 4.25,
     limitPrice: 2050,
     currentPrice: 2040,
     status: 'partially_filled',
@@ -48,10 +48,10 @@ const executedOrders = [
     id: '4',
     asset: 'Silicon Valley Startup Fund',
     type: 'buy',
-    quantity: 20,
+    quantity: 5,
     executionPrice: 1500,
-    totalCost: 30000,
-    fee: 300,
+    totalCost: 7500,
+    fee: 75,
     executedAt: '2024-04-10T16:45:00Z',
     status: 'filled'
   },
@@ -59,10 +59,10 @@ const executedOrders = [
     id: '5',
     asset: 'London Real Estate',
     type: 'sell',
-    quantity: 15.5,
+    quantity: 4.5,
     executionPrice: 3200,
-    totalProceeds: 49600,
-    fee: 496,
+    totalProceeds: 14400,
+    fee: 144,
     executedAt: '2024-04-08T11:20:00Z',
     status: 'filled'
   },
@@ -146,11 +146,11 @@ export default function OpenOrdersPage() {
                             </div>
                             <div>
                               <p className="text-muted-foreground">Limit Price</p>
-                              <p className="font-semibold text-foreground">${order.limitPrice.toFixed(2)}</p>
+                              <p className="font-semibold text-foreground">₹{order.limitPrice.toFixed(2)}</p>
                             </div>
                             <div>
                               <p className="text-muted-foreground">Current Price</p>
-                              <p className="font-semibold text-foreground">${order.currentPrice.toFixed(2)}</p>
+                              <p className="font-semibold text-foreground">₹{order.currentPrice.toFixed(2)}</p>
                             </div>
                             <div>
                               <p className="text-muted-foreground">Expires In</p>
@@ -204,11 +204,11 @@ export default function OpenOrdersPage() {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Price</p>
-                          <p className="font-semibold text-foreground">${order.executionPrice.toFixed(2)}</p>
+                          <p className="font-semibold text-foreground">₹{order.executionPrice.toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Fee</p>
-                          <p className="font-semibold text-foreground">${order.fee.toFixed(2)}</p>
+                          <p className="font-semibold text-foreground">₹{order.fee.toFixed(2)}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-muted-foreground">
@@ -217,7 +217,7 @@ export default function OpenOrdersPage() {
                           <p className={`text-lg font-bold ${
                             order.type === 'buy' ? 'text-red-600' : 'text-green-600'
                           }`}>
-                            ${(order.type === 'buy' ? order.totalCost : order.totalProceeds).toFixed(2)}
+                            ₹{((order.type === 'buy' ? order.totalCost : order.totalProceeds) ?? 0).toFixed(2)}
                           </p>
                         </div>
                       </div>

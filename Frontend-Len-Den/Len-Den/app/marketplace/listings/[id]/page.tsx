@@ -172,6 +172,8 @@ export default function AssetDetailsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('details');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{ idx: number; value: number; x: number } | null>(null);
+  const [isInvesting, setIsInvesting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const asset = mockAssets.find((a) => a.id === params.id);
 
@@ -192,8 +194,62 @@ export default function AssetDetailsPage() {
   const unitsToInvest = investmentAmount ? Math.floor(Number(investmentAmount) / asset.pricePerUnit) : 0;
   const annualDiv = (unitsToInvest * asset.pricePerUnit * asset.expectedAnnualROI) / 100;
 
+  const handleCheckout = () => {
+    if (!investmentAmount || unitsToInvest === 0) return;
+    setIsInvesting(true);
+    // Simulate payment and processing
+    setTimeout(() => {
+      setIsInvesting(false);
+      setShowSuccess(true);
+      
+      // Auto redirect after 3 seconds
+      setTimeout(() => {
+        router.push('/portfolio?success=true');
+      }, 3000);
+    }, 1500);
+  };
+
   return (
     <>
+      {/* Success Overlay */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-md p-8 text-center animate-in zoom-in-95 fade-in duration-300 shadow-2xl border-accent/20">
+            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 scale-animation">
+              <CheckCircle className="w-10 h-10 text-green-500" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Investment Successful!</h2>
+            <p className="text-muted-foreground mb-8">Your units have been issued and secured on the blockchain.</p>
+            
+            <div className="bg-muted/50 rounded-xl p-6 text-left space-y-3 mb-8">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Asset</span>
+                <span className="font-semibold">{asset.name}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Units Purchased</span>
+                <span className="font-semibold">{unitsToInvest.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t border-border">
+                <span className="text-muted-foreground">Total Paid</span>
+                <span className="font-bold text-accent">{formatCurrency(unitsToInvest * asset.pricePerUnit)}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground animate-pulse">
+              Redirecting to your portfolio in a moment...
+            </p>
+            
+            <Button 
+              className="w-full mt-6 bg-accent hover:bg-accent/90"
+              onClick={() => router.push('/portfolio')}
+            >
+              Go Now
+            </Button>
+          </Card>
+        </div>
+      )}
+
       {/* Lightbox */}
       {lightboxIndex !== null && (
         <PhotoLightbox
@@ -554,9 +610,13 @@ export default function AssetDetailsPage() {
                 <div className="space-y-3">
                   {[
                     ...asset.legalDocuments,
+                    { title: '7/12 Extract (Optional)', url: '#' },
+                    { title: 'Property Card', url: '#' },
+                    { title: 'Registered Sale Deed', url: '#' },
+                    { title: 'Identity Proof of Owner', url: '#' },
+                    { title: 'Encumbrance Certificate (NEC)', url: '#' },
                     { title: 'Subscription Agreement', url: '#' },
-                    { title: 'Private Placement Memorandum', url: '#' },
-                    { title: 'Operating Agreement', url: '#' },
+                    { title: 'Operating Agreement (LLC)', url: '#' },
                   ].map((doc, idx) => (
                     <div
                       key={idx}
@@ -811,9 +871,9 @@ export default function AssetDetailsPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Investment Amount (USD)</label>
+                  <label className="text-sm font-medium mb-2 block">Investment Amount (INR)</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
                     <Input
                       type="number"
                       min={asset.pricePerUnit}
@@ -841,9 +901,17 @@ export default function AssetDetailsPage() {
 
                 <Button
                   className="w-full bg-accent hover:bg-accent/90"
-                  disabled={!investmentAmount || unitsToInvest === 0}
+                  disabled={!investmentAmount || unitsToInvest === 0 || isInvesting}
+                  onClick={handleCheckout}
                 >
-                  Continue to Checkout
+                  {isInvesting ? (
+                    <>
+                      <Clock className="w-4 h-4 animate-spin mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Continue to Checkout'
+                  )}
                 </Button>
 
                 <Button variant="outline" className="w-full" disabled>

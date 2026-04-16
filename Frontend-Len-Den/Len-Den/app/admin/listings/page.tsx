@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,20 +102,12 @@ export default function AdminListingsPage() {
                   </td>
                   <td className="text-center p-4">
                     <div className="flex items-center justify-center gap-2">
-                      <Button size="sm" variant="ghost" className="gap-1">
-                        <Eye className="w-4 h-4" />
-                        View
-                      </Button>
-                      <Button size="sm" variant="ghost" className="gap-1">
-                        <Star className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="gap-1 text-red-500 hover:text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <Link href={`/marketplace/listings/${asset.id}`}>
+                        <Button size="sm" variant="outline" className="gap-2 bg-accent text-white hover:bg-accent/90 border-none h-8 px-4">
+                          <Eye className="w-3.5 h-3.5" />
+                          View
+                        </Button>
+                      </Link>
                     </div>
                   </td>
                 </tr>

@@ -21,14 +21,20 @@ import {
   Wallet,
   BarChart3,
   Package,
+  FileText,
+  Eye,
+  ShieldCheck,
+  Image,
 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-
   const user = mockUsers.find((u) => u.id === id);
   if (!user) notFound();
+
+  const [userKycStatus, setUserKycStatus] = useState(user.kycStatus);
 
   const getKycBadge = (status: string) => {
     switch (status) {
@@ -119,153 +125,118 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5 border-border bg-card">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
-              <Wallet className="w-4 h-4 text-blue-600" />
-            </div>
-            <p className="text-muted-foreground text-xs">Total Invested</p>
-          </div>
-          <p className="text-2xl font-bold">
-            ${(user.totalInvested / 1_000_000).toFixed(2)}M
-          </p>
-        </Card>
+      {/* Stats Cards - REMOVED per user request */}
 
-        <Card className="p-5 border-border bg-card">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-            </div>
-            <p className="text-muted-foreground text-xs">Total Gains</p>
-          </div>
-          <p className="text-2xl font-bold text-green-600">
-            +${(user.totalGains / 1000).toFixed(0)}K
-          </p>
-        </Card>
-
-        <Card className="p-5 border-border bg-card">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center">
-              <BarChart3 className="w-4 h-4 text-purple-600" />
-            </div>
-            <p className="text-muted-foreground text-xs">Portfolio Value</p>
-          </div>
-          <p className="text-2xl font-bold">
-            ${(totalPortfolioValue / 1_000_000).toFixed(2)}M
-          </p>
-        </Card>
-
-        <Card className="p-5 border-border bg-card">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center">
-              <Package className="w-4 h-4 text-orange-600" />
-            </div>
-            <p className="text-muted-foreground text-xs">Assets Held</p>
-          </div>
-          <p className="text-2xl font-bold">{user.portfolio.length}</p>
-        </Card>
-      </div>
-
-      {/* Portfolio Holdings */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Portfolio Holdings</h2>
-        <Card className="border-border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-card/50 border-b border-border">
-                <tr>
-                  <th className="text-left p-4 font-semibold">Asset</th>
-                  <th className="text-left p-4 font-semibold">Category</th>
-                  <th className="text-right p-4 font-semibold">Units Owned</th>
-                  <th className="text-right p-4 font-semibold">Unit Price</th>
-                  <th className="text-right p-4 font-semibold">Total Value</th>
-                  <th className="text-right p-4 font-semibold">Expected ROI</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {portfolioWithDetails.map((holding) => (
-                  <tr key={holding.assetId} className="hover:bg-card/50 transition-colors">
-                    <td className="p-4">
-                      <div>
-                        <p className="font-medium">
-                          {holding.asset?.name ?? holding.assetId}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {holding.asset?.location ?? '—'}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <Badge variant="outline" className="capitalize text-xs">
-                        {holding.asset?.category ?? '—'}
-                      </Badge>
-                    </td>
-                    <td className="p-4 text-right font-medium">
-                      {holding.unitsOwned.toLocaleString()}
-                    </td>
-                    <td className="p-4 text-right text-muted-foreground">
-                      ${holding.unitPrice.toLocaleString()}
-                    </td>
-                    <td className="p-4 text-right font-semibold">
-                      ${(holding.unitsOwned * holding.unitPrice).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-right text-green-600 font-medium">
-                      {holding.asset?.expectedAnnualROI !== undefined
-                        ? `+${holding.asset.expectedAnnualROI}%`
-                        : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
+      {/* Portfolio Holdings - REMOVED per user request */}
 
       {/* KYC Information */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">KYC Information</h2>
-        <Card className="border-border bg-card p-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Verification Status</p>
-              {getKycBadge(user.kycStatus)}
-            </div>
-            {user.kycStatus === 'pending' && (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white gap-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Approve KYC
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="gap-2"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Reject KYC
-                </Button>
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Compliance & KYC Documents</h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Documents Section */}
+          <div className="lg:col-span-2 space-y-4">
+            <Card className="border-border bg-card p-6">
+              <h3 className="font-medium mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-accent" />
+                Submitted Documents
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { name: 'National Identity Card (Front)', size: '1.2 MB', status: 'verified' },
+                  { name: 'National Identity Card (Back)', size: '0.9 MB', status: 'verified' },
+                  { name: 'Proof of Address (Utility Bill)', size: '2.4 MB', status: 'pending' },
+                  { name: 'Tax Compliance Certificate', size: '1.5 MB', status: 'pending' },
+                ].map((doc, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20 hover:bg-muted/30 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                        <Image className="w-5 h-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold truncate max-w-[150px]">{doc.name}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{doc.size}</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                      <Eye className="w-3 h-3" /> View
+                    </Button>
+                  </div>
+                ))}
               </div>
-            )}
-            {user.kycStatus === 'verified' && (
-              <p className="text-sm text-green-600 flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" />
-                KYC fully verified — no action required
-              </p>
-            )}
-            {user.kycStatus === 'rejected' && (
-              <Button size="sm" variant="outline" className="gap-2">
-                <Clock className="w-4 h-4" />
-                Re-review Application
-              </Button>
-            )}
+            </Card>
+
+            <Card className="border-border bg-card p-6">
+               <h3 className="font-medium mb-4 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-green-500" />
+                Liveness Check Result
+              </h3>
+              <div className="flex items-center gap-4">
+                 <div className="w-24 h-24 rounded-2xl bg-muted overflow-hidden border-2 border-green-500">
+                    <img src={user.avatar} className="w-full h-full object-cover grayscale-[0.5]" />
+                 </div>
+                 <div className="space-y-1">
+                    <p className="text-sm font-bold text-green-500 flex items-center gap-1">
+                       <CheckCircle className="w-4 h-4" /> 98% Identity Match
+                    </p>
+                    <p className="text-xs text-muted-foreground">Selfie-to-ID verification completed on March 25, 2024</p>
+                 </div>
+              </div>
+            </Card>
           </div>
-        </Card>
+
+          {/* Action Sidebar */}
+          <div className="flex flex-col gap-4">
+            <Card className="border-border bg-accent/5 p-6 border-accent/20">
+              <h3 className="font-bold text-lg mb-2">Final Decision</h3>
+              <p className="text-xs text-muted-foreground mb-6">Review the submitted documents carefully before making a decision.</p>
+              
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-card border border-border">
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Current Status</p>
+                   {getKycBadge(userKycStatus)}
+                </div>
+
+                <div className="space-y-2">
+                   <Button 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white gap-2 h-11"
+                    onClick={() => setUserKycStatus('verified')}
+                    disabled={userKycStatus === 'verified'}
+                   >
+                     <CheckCircle className="w-4 h-4" /> Approve User
+                   </Button>
+                   <Button 
+                    variant="outline" 
+                    className="w-full gap-2 h-11 border-red-500/50 text-red-500 hover:bg-red-500/10"
+                    onClick={() => setUserKycStatus('rejected')}
+                    disabled={userKycStatus === 'rejected'}
+                   >
+                     <XCircle className="w-4 h-4" /> Reject Application
+                   </Button>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border-border bg-card">
+               <h4 className="text-xs font-bold uppercase tracking-widest mb-3">Audit Log</h4>
+               <div className="space-y-4">
+                  {[
+                    { action: 'KYC Submitted', date: 'Mar 24', time: '14:20' },
+                    { action: 'Sanctions Check Cleared', date: 'Mar 25', time: '09:15' },
+                  ].map((log, i) => (
+                    <div key={i} className="flex gap-3 relative pb-4 last:pb-0">
+                       <div className="w-2 h-2 rounded-full bg-muted mt-1 z-10 shrink-0" />
+                       {i === 0 && <div className="absolute left-1 top-2 bottom-0 w-px bg-muted -ml-[0.5px]" />}
+                       <div>
+                          <p className="text-xs font-bold">{log.action}</p>
+                          <p className="text-[10px] text-muted-foreground">{log.date} at {log.time}</p>
+                       </div>
+                    </div>
+                  ))}
+               </div>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
