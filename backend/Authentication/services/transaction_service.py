@@ -1,27 +1,32 @@
 from algosdk import transaction
+from algosdk import transaction
+from .algorand_service import algod_client
 
-def create_atomic_buy(buyer, seller, asset_id, amount, price):
+def create_atomic_buy(buyer, seller, asset_id, quantity, price):
 
     params = algod_client.suggested_params()
 
-    pay_txn = transaction.PaymentTxn(
+    # Payment txn (buyer → seller)
+    payment_txn = transaction.PaymentTxn(
         sender=buyer,
         receiver=seller,
-        amt=price,
+        amt=int(price),  # microAlgos
         sp=params
     )
 
+    # asset transfer txn (seller → buyer)
     asset_txn = transaction.AssetTransferTxn(
         sender=seller,
         receiver=buyer,
-        amt=amount,
+        amt=int(quantity),
         index=asset_id,
         sp=params
     )
 
-    gid = transaction.calculate_group_id([pay_txn, asset_txn])
+    # 🔗 Group them
+    gid = transaction.calculate_group_id([payment_txn, asset_txn])
 
-    pay_txn.group = gid
+    payment_txn.group = gid
     asset_txn.group = gid
 
-    return [pay_txn, asset_txn]
+    return [payment_txn, asset_txn]

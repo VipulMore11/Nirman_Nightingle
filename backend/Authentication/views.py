@@ -4,12 +4,14 @@ from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import KYCSerializer, UserSerializer,LoginSerializer, ProfileSerializer
-from .models import KYC, User
+from .models import KYC, User, Transaction, Listings, WalletHolding
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
-
+from algosdk import encoding
+from .services.transaction_service import create_atomic_buy
+from .services.algorand_service import algod_client
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -123,3 +125,105 @@ def verify_kyc(request):
 def get_kyc(request):
     serializer = KYCSerializer(request.user.kyc)
     return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def buy_asset(request):
+
+    listing_id = request.data.get("listing_id")
+    quantity = int(request.data.get("quantity"))
+
+    user = request.user
+
+    # 🔐 KYC check
+    if user.kyc.status != 'verified':
+        return Response({"error": "KYC not verified"}, status=403)
+
+    listing = Listing.objects.get(id=listing_id)
+
+    if not listing.is_active:
+        return Response({"error": "Listing not active"}, status=400)
+
+    if quantity > listing.quantity_available:
+        return Response({"error": "Not enough units"}, status=400)
+
+    total_price = quantity * listing.price_per_unit
+
+    # 🔥 Create transaction record (pending)
+    txn_obj = Transaction.objects.create(
+        buyer=user,
+        seller=listing.seller,
+        asset=listing.asset,
+        listing=listing,
+        quantity=quantity,
+        unit_price=listing.price_per_unit,
+        total_amount=total_price,
+        asa_id=listing.asset.asa_id,
+        status='pending'
+    )
+
+    # 🔗 Create atomic txn
+    txns = create_atomic_buy(
+        buyer=user.wallet_address,
+        seller=listing.seller.wallet_address,
+        asset_id=listing.asset.asa_id,
+        quantity=quantity,
+        price=total_price
+    )
+
+    encoded_txns = [encoding.msgpack_encode(txn) for txn in txns]
+
+    return Response({
+        "txn_id": txn_obj.id,
+        "txns": encoded_txns
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def confirm_buy(request):
+
+    txn_id = request.data.get("txn_id")
+    blockchain_tx_id = request.data.get("blockchain_tx_id")
+
+    txn = Transaction.objects.get(id=txn_id)
+
+    # 🔍 Verify on blockchain
+    tx_info = algod_client.pending_transaction_info(blockchain_tx_id)
+
+    if not tx_info:
+        txn.mark_failed("Transaction not found on blockchain")
+        return Response({"error": "Invalid transaction"}, status=400)
+
+    # ✅ Mark confirmed
+    txn.mark_confirmed(blockchain_tx_id)
+
+    # 🔄 Update Listing
+    listing = txn.listing
+    listing.quantity_available -= txn.quantity
+
+    if listing.quantity_available <= 0:
+        listing.is_active = False
+
+    listing.save()
+
+    # 🔄 Update Buyer Holdings
+    holding, created = WalletHolding.objects.get_or_create(
+        user=txn.buyer,
+        asset=txn.asset,
+        defaults={
+            "quantity": txn.quantity,
+            "wallet_address": txn.buyer.wallet_address,
+            "opt_in_status": True
+        }
+    )
+
+    if not created:
+        holding.quantity += txn.quantity
+        holding.save()
+
+    return Response({
+        "message": "Transaction confirmed",
+        "tx_id": blockchain_tx_id
+    })
+

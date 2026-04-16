@@ -234,14 +234,14 @@ class Transaction(models.Model):
         related_name='transactions'
     )
 
-    # 🔢 Quantity (fractional units)
+    # Quantity (fractional units)
     quantity = models.DecimalField(max_digits=20, decimal_places=2)
 
     # 💰 Pricing
     unit_price = models.DecimalField(max_digits=15, decimal_places=4)
     total_amount = models.DecimalField(max_digits=20, decimal_places=2)
 
-    # 🔗 Blockchain fields (IMPORTANT)
+    # Blockchain fields (IMPORTANT)
     tx_id = models.CharField(max_length=255, null=True, blank=True)  # main txn id
 
     group_transaction_id = models.CharField(
@@ -254,24 +254,24 @@ class Transaction(models.Model):
     payment_txn_id = models.CharField(max_length=255, null=True, blank=True)
     asset_transfer_txn_id = models.CharField(max_length=255, null=True, blank=True)
 
-    # 🪙 ASA reference (useful for debugging & queries)
+    # ASA reference (useful for debugging & queries)
     asa_id = models.BigIntegerField(null=True, blank=True)
 
-    # 📊 Status tracking
+    # Status tracking
     status = models.CharField(
         max_length=20,
         choices=TRANSACTION_STATUS_CHOICES,
         default='pending'
     )
 
-    # ✅ Validation flags
+    # Validation flags
     buyer_opt_in_validated = models.BooleanField(default=False)
     buyer_balance_validated = models.BooleanField(default=False)
 
-    # ❌ Error handling
+    # Error handling
     error_message = models.TextField(blank=True, null=True)
 
-    # ⏱️ Timestamps
+    #  Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
 
