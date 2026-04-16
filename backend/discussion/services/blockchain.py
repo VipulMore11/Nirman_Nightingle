@@ -2,15 +2,12 @@
 Blockchain interactions using Web3.py
 Handles ERC-20 balance checks and governance contract calls.
 """
-import logging
 from decimal import Decimal
 from typing import Optional, Tuple
 
 from web3 import Web3
 from web3.contract import Contract
 from django.conf import settings
-
-logger = logging.getLogger(__name__)
 
 
 class BlockchainService:
@@ -21,7 +18,7 @@ class BlockchainService:
     def __init__(self):
         self.w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URL))
         if not self.w3.is_connected():
-            logger.warning("Web3 provider not connected")
+            pass
 
     def get_balance_at_block(
         self,
@@ -68,7 +65,6 @@ class BlockchainService:
             return Decimal(str(balance))
 
         except Exception as e:
-            logger.error(f"Error fetching balance: {str(e)}")
             raise
 
     def get_total_supply(
@@ -112,7 +108,6 @@ class BlockchainService:
             return Decimal(str(supply))
 
         except Exception as e:
-            logger.error(f"Error fetching total supply: {str(e)}")
             raise
 
     def get_vote(
@@ -148,7 +143,6 @@ class BlockchainService:
             return None, None
 
         except Exception as e:
-            logger.error(f"Error fetching vote: {str(e)}")
             return None, None
 
     def cast_vote(
@@ -187,11 +181,9 @@ class BlockchainService:
             signed_tx = self.w3.eth.account.sign_transaction(tx, private_key)
             tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
             
-            logger.info(f"Vote transaction sent: {tx_hash.hex()}")
             return tx_hash.hex()
 
         except Exception as e:
-            logger.error(f"Error casting vote: {str(e)}")
             raise
 
     def record_veto(
@@ -223,11 +215,9 @@ class BlockchainService:
             signed_tx = self.w3.eth.account.sign_transaction(tx, owner_key)
             tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
             
-            logger.info(f"Veto transaction sent: {tx_hash.hex()}")
             return tx_hash.hex()
 
         except Exception as e:
-            logger.error(f"Error executing veto: {str(e)}")
             raise
 
     def get_veto_count(
@@ -264,7 +254,6 @@ class BlockchainService:
             return veto_count
 
         except Exception as e:
-            logger.error(f"Error counting vetoes: {str(e)}")
             return 0
 
     def get_snapshot_block(self, proposal_id: int) -> Optional[int]:
@@ -288,7 +277,6 @@ class BlockchainService:
             return snapshot if snapshot > 0 else None
 
         except Exception as e:
-            logger.error(f"Error fetching snapshot block: {str(e)}")
             return None
 
     def get_current_block(self) -> int:
@@ -296,7 +284,6 @@ class BlockchainService:
         try:
             return self.w3.eth.block_number
         except Exception as e:
-            logger.error(f"Error fetching current block: {str(e)}")
             raise
 
     # ---- Private helper methods ----

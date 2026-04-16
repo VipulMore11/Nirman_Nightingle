@@ -1,10 +1,16 @@
+import json
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import KYC, User  
+from .models import KYC, User, Asset
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from .services.cloudinary_service import (
+    upload_asset_property_images, 
+    upload_asset_legal_documents,
+    upload_asset_certificates
+)
 
 class Base64ImageField(serializers.ImageField):
     """
@@ -56,23 +62,28 @@ class Base64ImageField(serializers.ImageField):
         return extension
 
 class UserSerializer(serializers.ModelSerializer):
-    role = serializers.ChoiceField(choices=['user', 'admin'], required=False)
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('email', 'username','first_name','last_name', 'password','sex', 'role')
+        fields = ('id', 'email', 'username','first_name','last_name', 'password', 'role', 'profile_pic')
+
+    def get_role(self, obj):
+        return obj.role
 
     def create(self, validated_data):
         email = validated_data.get('email')
         username = validated_data.get('username')
         first_name = validated_data.get('first_name')
         last_name = validated_data.get('last_name')
-        sex = validated_data.get('sex')
+        sex = validated_data.get('sex', '')
         password = validated_data.get('password')
+        profile_pic = validated_data.get('profile_pic', None)
         if not email:
             raise ValueError(_('The Email must be set'))
         User = get_user_model()
-        user = User(email=email, username=username, first_name=first_name, last_name=last_name, sex=sex, role=validated_data.get('role'))
+        # Force role to 'user' on signup - admins can only be created via Django admin
+        user = User(email=email, username=username, first_name=first_name, last_name=last_name, sex=sex, role='user', profile_pic=profile_pic)
         user.set_password(password)
         user.is_active= True
         user.save()
@@ -107,10 +118,109 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = ['first_name','last_name', 'email', 'phone_no', 'profile_pic', 'age','sex', 'dob', ]
 
 class KYCSerializer(serializers.ModelSerializer):
+    # File upload fields (input only, not stored in database)
+    aadhaar_file = serializers.FileField(write_only=True, required=False, allow_null=True)
+    pan_file = serializers.FileField(write_only=True, required=False, allow_null=True)
+    passport_file = serializers.FileField(write_only=True, required=False, allow_null=True)
+    selfie_file = serializers.FileField(write_only=True, required=False, allow_null=True)
+    
     class Meta:
         model = KYC
-        fields = '__all__'
-        read_only_fields = ['status', 'verified_by', 'verified_at']
+        fields = [
+            'id', 'user', 'aadhaar_number', 'aadhaar_card_url',
+            'pan_number', 'pan_card_url', 'passport_number', 'passport_url',
+            'address_line', 'city', 'state', 'pincode', 'selfie_url',
+            'status', 'verified_by', 'verified_at', 'documents_submitted_at', 'created_at',
+            'aadhaar_file', 'pan_file', 'passport_file', 'selfie_file'
+        ]
+        read_only_fields = ['status', 'verified_by', 'verified_at', 'created_at', 'documents_submitted_at']
+    
+    def validate(self, data):
+        """
+        Validate that at least one identity document and a selfie are provided.
+        """
+        # Check file inputs
+        has_aadhaar_file = data.get('aadhaar_file') is not None
+        has_pan_file = data.get('pan_file') is not None
+        has_passport_file = data.get('passport_file') is not None
+        has_selfie_file = data.get('selfie_file') is not None
+        
+        # Check if files are being uploaded
+        files_being_uploaded = any([has_aadhaar_file, has_pan_file, has_passport_file, has_selfie_file])
+        
+        if files_being_uploaded:
+            # If uploading files, require at least one ID and a selfie
+            has_id_document = has_aadhaar_file or has_pan_file or has_passport_file
+            if not has_id_document or not has_selfie_file:
+                raise ValidationError(
+                    "At least one identity document (Aadhaar, PAN, or Passport) and a selfie are required."
+                )
+        
+        return data
+    
+    def create(self, validated_data):
+        """
+        Create a new KYC record with file uploads.
+        """
+        from .services.cloudinary_service import upload_kyc_documents
+        from django.utils import timezone
+        
+        # Extract file objects from validated data
+        aadhaar_file = validated_data.pop('aadhaar_file', None)
+        pan_file = validated_data.pop('pan_file', None)
+        passport_file = validated_data.pop('passport_file', None)
+        selfie_file = validated_data.pop('selfie_file', None)
+        
+        # Upload files to Cloudinary if provided
+        if any([aadhaar_file, pan_file, passport_file, selfie_file]):
+            try:
+                uploaded_urls = upload_kyc_documents(
+                    kyc_obj=None,  # Not used in the function
+                    aadhaar_file=aadhaar_file,
+                    pan_file=pan_file,
+                    passport_file=passport_file,
+                    selfie_file=selfie_file
+                )
+                # Update validated_data with the Cloudinary URLs
+                validated_data.update(uploaded_urls)
+                validated_data['documents_submitted_at'] = timezone.now()
+            except Exception as e:
+                raise ValidationError(f"Document upload failed: {str(e)}")
+        
+        # Create the KYC record
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        """
+        Update a KYC record with file uploads.
+        """
+        from .services.cloudinary_service import upload_kyc_documents
+        from django.utils import timezone
+        
+        # Extract file objects from validated data
+        aadhaar_file = validated_data.pop('aadhaar_file', None)
+        pan_file = validated_data.pop('pan_file', None)
+        passport_file = validated_data.pop('passport_file', None)
+        selfie_file = validated_data.pop('selfie_file', None)
+        
+        # Upload files to Cloudinary if provided
+        if any([aadhaar_file, pan_file, passport_file, selfie_file]):
+            try:
+                uploaded_urls = upload_kyc_documents(
+                    kyc_obj=instance,
+                    aadhaar_file=aadhaar_file,
+                    pan_file=pan_file,
+                    passport_file=passport_file,
+                    selfie_file=selfie_file
+                )
+                # Update validated_data with the Cloudinary URLs
+                validated_data.update(uploaded_urls)
+                validated_data['documents_submitted_at'] = timezone.now()
+            except Exception as e:
+                raise ValidationError(f"Document upload failed: {str(e)}")
+        
+        # Update the KYC record
+        return super().update(instance, validated_data)
 
 
 # ===== Tokenized Asset Marketplace Serializers =====
@@ -121,15 +231,22 @@ from .models import Asset, WalletHolding, Listing, Transaction
 class AssetListingSerializer(serializers.ModelSerializer):
     """Minimal serializer for asset listings"""
     owner_email = serializers.CharField(source='owner.email', read_only=True)
+    thumbnail_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Asset
         fields = [
-            'id', 'asa_id', 'title', 'description', 'photo',
+            'id', 'asa_id', 'title', 'description', 'thumbnail_url',
             'total_supply', 'available_supply', 'unit_price',
             'listing_status', 'is_verified', 'owner_email',
             'created_at', 'listed_at'
         ]
+    
+    def get_thumbnail_url(self, obj):
+        """Get first image from property_images or return None"""
+        if obj.property_images and len(obj.property_images) > 0:
+            return obj.property_images[0].get('url')
+        return None
 
 
 class AssetDetailSerializer(serializers.ModelSerializer):
@@ -142,12 +259,12 @@ class AssetDetailSerializer(serializers.ModelSerializer):
         model = Asset
         fields = [
             'id', 'owner', 'owner_email', 'asa_id', 'title', 'description',
-            'photo', 'total_supply', 'available_supply', 'unit_price',
-            'legal_documents', 'metadata_json', 'listing_status',
+            'property_images', 'total_supply', 'available_supply', 'unit_price',
+            'legal_documents', 'certificates', 'metadata_json', 'listing_status',
             'is_verified', 'total_holders', 'total_value',
             'created_at', 'updated_at', 'listed_at', 'delisted_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'owner']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'owner', 'property_images', 'legal_documents', 'certificates']
 
     def get_total_holders(self, obj):
         """Get number of unique holders"""
@@ -159,14 +276,61 @@ class AssetDetailSerializer(serializers.ModelSerializer):
 
 
 class AssetCreateUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for creating/updating assets"""
+    """Serializer for creating/updating assets with file upload support"""
+    
+    # Write-only file list fields for upload
+    property_image_files = serializers.ListField(
+        child=serializers.FileField(),
+        write_only=True,
+        required=False,
+        help_text="List of property image files"
+    )
+    
+    legal_document_files = serializers.ListField(
+        child=serializers.FileField(),
+        write_only=True,
+        required=False,
+        help_text="List of legal document files"
+    )
+    
+    certificate_files = serializers.ListField(
+        child=serializers.FileField(),
+        write_only=True,
+        required=False,
+        help_text="List of certificate files"
+    )
+    
+    # Names mapping for files (sent by frontend)
+    property_image_names = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        required=False,
+        help_text="Names for property images (must match order of files)"
+    )
+    
+    legal_document_names = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        required=False,
+        help_text="Names for legal documents (must match order of files)"
+    )
+    
+    certificate_names = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        required=False,
+        help_text="Names for certificates (must match order of files)"
+    )
     
     class Meta:
         model = Asset
         fields = [
-            'title', 'description', 'photo', 'total_supply',
-            'unit_price', 'legal_documents', 'metadata_json'
+            'title', 'description', 'total_supply', 'unit_price', 'creator_wallet',
+            'metadata_json', 'property_images', 'legal_documents', 'certificates',
+            'property_image_files', 'legal_document_files', 'certificate_files',
+            'property_image_names', 'legal_document_names', 'certificate_names'
         ]
+        read_only_fields = ['property_images', 'legal_documents', 'certificates']
 
     def validate_total_supply(self, value):
         if value <= 0:
@@ -177,11 +341,174 @@ class AssetCreateUpdateSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("Unit price must be greater than 0")
         return value
+    
+    def validate(self, data):
+        """Validate file and name mappings"""
+        
+        def normalize_names(names_input):
+            """Convert various name formats to clean list of strings"""
+            if not names_input:
+                return []
+            
+            # If it's a list with one JSON string element, parse it
+            if isinstance(names_input, list) and len(names_input) == 1 and isinstance(names_input[0], str):
+                try:
+                    parsed = json.loads(names_input[0])
+                    if isinstance(parsed, list):
+                        return parsed
+                except Exception:
+                    pass
+            
+            # If it's a string (JSON), parse it
+            if isinstance(names_input, str):
+                try:
+                    parsed = json.loads(names_input)
+                    if isinstance(parsed, list):
+                        return parsed
+                except Exception:
+                    return [names_input]
+            
+            # If it's already a list, return as-is
+            if isinstance(names_input, list):
+                return names_input
+            
+            return [names_input] if names_input else []
+        
+        # Normalize file inputs - convert single files to lists
+        property_files = data.get('property_image_files', [])
+        if property_files and not isinstance(property_files, list):
+            property_files = [property_files]
+            data['property_image_files'] = property_files
+        
+        # Normalize and parse names
+        property_names = normalize_names(data.get('property_image_names', []))
+        data['property_image_names'] = property_names
+        
+        # Check property images
+        if property_files and len(property_files) != len(property_names):
+            raise serializers.ValidationError(
+                f"Number of property image names ({len(property_names)}) must match number of files ({len(property_files)})"
+            )
+        
+        # Normalize legal document inputs and names
+        doc_files = data.get('legal_document_files', [])
+        if doc_files and not isinstance(doc_files, list):
+            doc_files = [doc_files]
+            data['legal_document_files'] = doc_files
+        
+        doc_names = normalize_names(data.get('legal_document_names', []))
+        data['legal_document_names'] = doc_names
+        
+        if doc_files and len(doc_files) != len(doc_names):
+            raise serializers.ValidationError(
+                f"Number of legal document names ({len(doc_names)}) must match number of files ({len(doc_files)})"
+            )
+        
+        # Normalize certificate inputs and names
+        cert_files = data.get('certificate_files', [])
+        if cert_files and not isinstance(cert_files, list):
+            cert_files = [cert_files]
+            data['certificate_files'] = cert_files
+        
+        cert_names = normalize_names(data.get('certificate_names', []))
+        data['certificate_names'] = cert_names
+        
+        if cert_files and len(cert_files) != len(cert_names):
+            raise serializers.ValidationError(
+                f"Number of certificate names ({len(cert_names)}) must match number of files ({len(cert_files)})"
+            )
+        
+        return data
 
     def create(self, validated_data):
+        # Extract file-related data
+        property_files = validated_data.pop('property_image_files', [])
+        property_names = validated_data.pop('property_image_names', [])
+        doc_files = validated_data.pop('legal_document_files', [])
+        doc_names = validated_data.pop('legal_document_names', [])
+        cert_files = validated_data.pop('certificate_files', [])
+        cert_names = validated_data.pop('certificate_names', [])
+        
+        # Set owner and available_supply
         validated_data['owner'] = self.context['request'].user
         validated_data['available_supply'] = validated_data['total_supply']
-        return super().create(validated_data)
+        
+        # Create asset first without files
+        asset = Asset.objects.create(**validated_data)
+        
+        # Upload files and update asset with returned URLs
+        try:
+            # Upload property images
+            if property_files:
+                file_pairs = list(zip(property_files, property_names))
+                property_images = upload_asset_property_images(asset.id, file_pairs)
+                asset.property_images = property_images
+            
+            # Upload legal documents
+            if doc_files:
+                file_pairs = list(zip(doc_files, doc_names))
+                legal_documents = upload_asset_legal_documents(asset.id, file_pairs)
+                asset.legal_documents = legal_documents
+            
+            # Upload certificates
+            if cert_files:
+                file_pairs = list(zip(cert_files, cert_names))
+                certificates = upload_asset_certificates(asset.id, file_pairs)
+                asset.certificates = certificates
+            
+            asset.save()
+        except Exception as e:
+            # If upload fails, delete the asset
+            asset.delete()
+            raise serializers.ValidationError(f"File upload failed: {str(e)}")
+        
+        return asset
+    
+    def update(self, instance, validated_data):
+        """Support partial updates with file additions"""
+        # Extract file-related data
+        property_files = validated_data.pop('property_image_files', [])
+        property_names = validated_data.pop('property_image_names', [])
+        doc_files = validated_data.pop('legal_document_files', [])
+        doc_names = validated_data.pop('legal_document_names', [])
+        cert_files = validated_data.pop('certificate_files', [])
+        cert_names = validated_data.pop('certificate_names', [])
+        
+        # Update basic fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        try:
+            # Update property images (append to existing)
+            if property_files:
+                file_pairs = list(zip(property_files, property_names))
+                new_images = upload_asset_property_images(instance.id, file_pairs)
+                # Append new images to existing
+                current_images = instance.property_images or []
+                instance.property_images = current_images + new_images
+            
+            # Update legal documents (merge with existing)
+            if doc_files:
+                file_pairs = list(zip(doc_files, doc_names))
+                new_docs = upload_asset_legal_documents(instance.id, file_pairs)
+                # Merge new documents with existing
+                current_docs = instance.legal_documents or {}
+                current_docs.update(new_docs)
+                instance.legal_documents = current_docs
+            
+            # Update certificates (append to existing)
+            if cert_files:
+                file_pairs = list(zip(cert_files, cert_names))
+                new_certs = upload_asset_certificates(instance.id, file_pairs)
+                # Append new certificates to existing
+                current_certs = instance.certificates or []
+                instance.certificates = current_certs + new_certs
+            
+            instance.save()
+        except Exception as e:
+            raise serializers.ValidationError(f"File upload failed: {str(e)}")
+        
+        return instance
 
 
 class WalletHoldingSerializer(serializers.ModelSerializer):
@@ -304,6 +631,74 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         transaction = Transaction.objects.create(
             buyer=self.context['request'].user,
             seller=listing.seller,
+            asset=listing.asset,
+            listing=listing,
+            quantity=quantity,
+            unit_price=listing.price_per_unit,
+            total_amount=quantity * listing.price_per_unit,
+            status='pending'
+        )
+        
+        return transaction
+
+
+class SellTransactionCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating new transactions (sell flow)"""
+    
+    class Meta:
+        model = Transaction
+        fields = ['listing', 'quantity']
+
+    def validate(self, data):
+        """Validate sell transaction data"""
+        listing = data['listing']
+        quantity = data['quantity']
+        seller = self.context['request'].user
+        
+        # Validate quantity
+        if quantity <= 0:
+            raise serializers.ValidationError("Quantity must be greater than 0")
+        
+        if quantity > listing.quantity_available:
+            raise serializers.ValidationError(
+                f"Insufficient available quantity. Only {listing.quantity_available} available."
+            )
+        
+        if not listing.is_active:
+            raise serializers.ValidationError("This listing is no longer active.")
+        
+        # For sell, the seller must be the listing creator
+        if listing.seller != seller:
+            raise serializers.ValidationError("You can only sell from your own listings.")
+        
+        # Verify seller has sufficient holdings
+        try:
+            holding = WalletHolding.objects.get(asset=listing.asset, user=seller)
+            if holding.quantity < quantity:
+                raise serializers.ValidationError(
+                    f"Insufficient holdings. You have {holding.quantity} units but trying to sell {quantity}."
+                )
+        except WalletHolding.DoesNotExist:
+            raise serializers.ValidationError("You do not hold this asset.")
+        
+        return data
+
+    def create(self, validated_data):
+        listing = validated_data['listing']
+        quantity = validated_data['quantity']
+        seller = self.context['request'].user
+        buyer_id = self.context.get('buyer_id')  # Should be provided in context
+        
+        if not buyer_id:
+            raise serializers.ValidationError("Buyer ID is required for sell transactions.")
+        
+        from django.shortcuts import get_object_or_404
+        buyer = get_object_or_404(User, id=buyer_id)
+        
+        # Create transaction
+        transaction = Transaction.objects.create(
+            buyer=buyer,
+            seller=seller,
             asset=listing.asset,
             listing=listing,
             quantity=quantity,

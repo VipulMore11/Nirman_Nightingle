@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from .managers import CustomUserManager
 from django.contrib.auth.models import AbstractUser
+import json
 
 class User(AbstractUser):
 
@@ -14,12 +15,12 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=255, null=True, blank=True)
     last_name = models.CharField(max_length=255, null=True, blank=True)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=100)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
 
 
     phone_no = models.CharField(max_length=10, blank=True, null=True)
     profile_pic = models.TextField(blank=True, null=True)
+    wallet_address = models.TextField(max_length=255, null=True, blank=True)
     age = models.IntegerField(null=True, blank=True)
     sex = models.CharField(max_length=10, blank=True, null=True)
     dob = models.CharField(max_length=11, blank=True, null=True)
@@ -57,6 +58,9 @@ class KYC(models.Model):
     pan_number = models.CharField(max_length=10, blank=True, null=True)
     pan_card_url = models.TextField(blank=True, null=True)
 
+    passport_number = models.CharField(max_length=20, blank=True, null=True)
+    passport_url = models.TextField(blank=True, null=True)
+
     # Address Proof
     address_line = models.TextField(blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
@@ -64,6 +68,9 @@ class KYC(models.Model):
     pincode = models.CharField(max_length=10, blank=True, null=True)
 
     selfie_url = models.TextField(blank=True, null=True)
+
+    # Document submission tracking
+    documents_submitted_at = models.DateTimeField(null=True, blank=True)
 
     # Verification status
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
@@ -99,9 +106,12 @@ class Asset(models.Model):
 
     # Core fields
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_assets')
+    creator_wallet = models.TextField(max_length=255)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    photo = models.TextField(blank=True, null=True)  # Store as base64 or URL
+    
+    # Property Images - JSON array: [{name, url, file_type}, ...]
+    property_images = models.JSONField(default=list, blank=True)
     
     # Asset-specific fields
     asa_id = models.BigIntegerField(unique=True, null=True, blank=True)  # Algorand ASA ID
@@ -110,7 +120,8 @@ class Asset(models.Model):
     unit_price = models.DecimalField(max_digits=15, decimal_places=4)  # Price per fractional unit
     
     # Legal & metadata
-    legal_documents = models.TextField(blank=True, null=True)  # Store JSON or file path
+    legal_documents = models.JSONField(default=dict, blank=True)  # JSON object mapping: {document_name: url}
+    certificates = models.JSONField(default=list, blank=True)  # JSON array: [{name, url, file_type}, ...]
     metadata_json = models.TextField(blank=True, null=True)  # Additional metadata
     
     # Status & tracking
@@ -120,6 +131,11 @@ class Asset(models.Model):
         default='inactive'
     )
     is_verified = models.BooleanField(default=False)  # Admin verification
+    
+    # Approval workflow
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_assets', limit_choices_to={'role': 'admin'})
+    approved_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, null=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -203,42 +219,84 @@ class Listing(models.Model):
 class Transaction(models.Model):
     """
     Records all buy/sell transactions in the marketplace.
-    Maintains transaction trail for auditing and history.
+    Maintains transaction trail for auditing and blockchain sync.
     """
+
     TRANSACTION_STATUS_CHOICES = (
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
         ('failed', 'Failed'),
     )
 
-    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchases')
-    seller = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sales')
-    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='transactions')
-    listing = models.ForeignKey(Listing, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
-    
+    buyer = models.ForeignKey(
+        'User',
+        on_delete=models.CASCADE,
+        related_name='purchases'
+    )
+
+    seller = models.ForeignKey(
+        'User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sales'
+    )
+
+    asset = models.ForeignKey(
+        'Asset',
+        on_delete=models.CASCADE,
+        related_name='transactions'
+    )
+
+    listing = models.ForeignKey(
+        'Listing',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transactions'
+    )
+
+    # Quantity (fractional units)
     quantity = models.DecimalField(max_digits=20, decimal_places=2)
+
+    # 💰 Pricing
     unit_price = models.DecimalField(max_digits=15, decimal_places=4)
     total_amount = models.DecimalField(max_digits=20, decimal_places=2)
-    
-    # Algorand-specific fields
-    group_transaction_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
-    payment_txn_id = models.CharField(max_length=255, null=True, blank=True)  # Payment transaction
-    asset_transfer_txn_id = models.CharField(max_length=255, null=True, blank=True)  # Asset transfer
-    
+
+    # Blockchain fields (IMPORTANT)
+    tx_id = models.CharField(max_length=255, null=True, blank=True)  # main txn id
+
+    group_transaction_id = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True
+    )
+
+    payment_txn_id = models.CharField(max_length=255, null=True, blank=True)
+    asset_transfer_txn_id = models.CharField(max_length=255, null=True, blank=True)
+
+    # ASA reference (useful for debugging & queries)
+    asa_id = models.BigIntegerField(null=True, blank=True)
+
+    # Status tracking
     status = models.CharField(
         max_length=20,
         choices=TRANSACTION_STATUS_CHOICES,
         default='pending'
     )
-    
-    # Validation & metadata
+
+    # Validation flags
     buyer_opt_in_validated = models.BooleanField(default=False)
     buyer_balance_validated = models.BooleanField(default=False)
+
+    # Error handling
     error_message = models.TextField(blank=True, null=True)
-    
+
+    #  Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
-    
+
     class Meta:
         db_table = 'Transaction'
         ordering = ['-created_at']
@@ -247,7 +305,20 @@ class Transaction(models.Model):
             models.Index(fields=['seller', '-created_at']),
             models.Index(fields=['asset', '-created_at']),
             models.Index(fields=['status']),
+            models.Index(fields=['tx_id']),  # 🔥 fast blockchain lookup
         ]
 
     def __str__(self):
-        return f"Transaction: {self.buyer.email} bought {self.quantity} units from {self.seller.email if self.seller else 'issuer'}"
+        return f"{self.buyer.email} bought {self.quantity} units of {self.asset.title}"
+
+    # 🔥 Helper method (VERY USEFUL)
+    def mark_confirmed(self, tx_id):
+        self.tx_id = tx_id
+        self.status = 'confirmed'
+        self.confirmed_at = timezone.now()
+        self.save()
+
+    def mark_failed(self, error_msg=None):
+        self.status = 'failed'
+        self.error_message = error_msg
+        self.save()

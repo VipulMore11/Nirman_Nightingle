@@ -3,13 +3,11 @@ Celery background tasks for discussion app.
 Handles periodic checks and event syncing.
 """
 from celery import shared_task
-import logging
+
 from django.utils import timezone
 from discussion.models import Proposal
 from discussion.services.governance import GovernanceService
 from discussion.services.blockchain import blockchain_service
-
-logger = logging.getLogger(__name__)
 
 
 @shared_task
@@ -28,12 +26,9 @@ def task_check_quorum_periodically():
             if timezone.now() >= proposal.voting_end:
                 # Voting has ended, try to finalize
                 GovernanceService.finalize_proposal(proposal)
-                logger.info(f"Processed proposal {proposal.id}")
-        
-        logger.info(f"Quorum check task completed for {voting_proposals.count()} proposals")
     
     except Exception as e:
-        logger.error(f"Error in task_check_quorum_periodically: {str(e)}")
+        pass
 
 
 @shared_task
@@ -53,7 +48,6 @@ def task_poll_vote_events(proposal_id):
         proposal = Proposal.objects.get(id=proposal_id)
         
         if proposal.status != 'VOTING':
-            logger.info(f"Proposal {proposal_id} not in voting status, skipping")
             return
         
         # Sync votes from blockchain
@@ -61,13 +55,11 @@ def task_poll_vote_events(proposal_id):
         
         # Update quorum status
         GovernanceService.calculate_quorum(proposal)
-        
-        logger.info(f"Vote polling completed for proposal {proposal_id}")
     
     except Proposal.DoesNotExist:
-        logger.error(f"Proposal {proposal_id} not found")
+        pass
     except Exception as e:
-        logger.error(f"Error in task_poll_vote_events: {str(e)}")
+        pass
 
 
 @shared_task
@@ -84,16 +76,14 @@ def task_notify_proposal_died(proposal_id):
         proposal = Proposal.objects.get(id=proposal_id)
         
         if proposal.status != 'DIED':
-            logger.warning(f"Proposal {proposal_id} is not in DIED status")
             return
         
         GovernanceService.notify_proposal_died(proposal)
-        logger.info(f"Notifications sent for proposal {proposal_id}")
     
     except Proposal.DoesNotExist:
-        logger.error(f"Proposal {proposal_id} not found")
+        pass
     except Exception as e:
-        logger.error(f"Error in task_notify_proposal_died: {str(e)}")
+        pass
 
 
 @shared_task
@@ -116,17 +106,12 @@ def task_sync_token_supply():
                 if supply != company.total_supply:
                     company.total_supply = supply
                     company.save()
-                    logger.info(
-                        f"Updated supply for {company.name}: {supply}"
-                    )
             
             except Exception as e:
-                logger.error(
-                    f"Error updating supply for {company.name}: {str(e)}"
-                )
+                pass
     
     except Exception as e:
-        logger.error(f"Error in task_sync_token_supply: {str(e)}")
+        pass
 
 
 @shared_task
@@ -148,15 +133,12 @@ def task_vote_event_listener(proposal_id):
         proposal_id: ID of the proposal
     """
     try:
-        logger.info(f"Starting vote event listener for proposal {proposal_id}")
-        
         # Placeholder: Real implementation would use Web3.py event filters
         # and long-poll or websocket for new events
-        
-        logger.info(f"Vote event listener completed for proposal {proposal_id}")
+        pass
     
     except Exception as e:
-        logger.error(f"Error in task_vote_event_listener: {str(e)}")
+        pass
 
 
 # Celery Beat Schedule Configuration

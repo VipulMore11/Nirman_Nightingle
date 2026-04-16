@@ -1,5 +1,8 @@
 from pathlib import Path
+from dotenv import load_dotenv
 
+# Load .env file
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -153,6 +156,23 @@ REST_FRAMEWORK = {
     ],
 }
 
+# Cloudinary Configuration
+import os
+import cloudinary
+
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET')
+)
+
+# KYC File Upload Settings
+# KYC_FILE_UPLOAD_SETTINGS = {
+#     'max_file_size': 5 * 1024 * 1024,  # 5MB
+#     'allowed_formats': ['jpg', 'jpeg', 'png'],
+#     'folder_prefix': 'kyc',
+# }
+
 # JWT Configuration
 from datetime import timedelta
 
@@ -209,18 +229,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
 # Celery Beat Scheduler (periodic tasks)
-from celery.schedules import crontab
-
-CELERY_BEAT_SCHEDULE = {
-    'check-quorum-every-hour': {
-        'task': 'discussion.tasks.task_check_quorum_periodically',
-        'schedule': crontab(minute=0),  # Every hour at :00
-    },
-    'sync-token-supply-daily': {
-        'task': 'discussion.tasks.task_sync_token_supply',
-        'schedule': crontab(hour=0, minute=0),  # Daily at midnight UTC
-    },
-}
+# from celery.schedules import crontab
+# CELERY_BEAT_SCHEDULE = {}
 
 # Governance Business Rules (constants)
 MIN_HOLDER_PERCENTAGE = 5  # Minimum 5% to vote/comment/propose

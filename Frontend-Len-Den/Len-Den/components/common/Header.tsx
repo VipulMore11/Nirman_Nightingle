@@ -5,12 +5,22 @@ import { usePathname } from 'next/navigation';
 import { BarChart3, Menu, Settings, LogOut, Bell, Search, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getStoredUser, getStoredRole } from '@/lib/utils/authService';
 
 export function Header() {
+  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const isLoggedIn = !pathname.includes('/auth');
+
+  useEffect(() => {
+    const storedUser = getStoredUser();
+    const storedRole = getStoredRole();
+    setUser(storedUser);
+    setRole(storedRole);
+  }, [pathname]);
 
   if (pathname.includes('/auth') && pathname !== '/') {
     return null;
@@ -40,18 +50,18 @@ export function Header() {
         )}
 
         <div className="flex items-center gap-3">
-          {isLoggedIn && (
+          {isLoggedIn && user && (
             <>
               <Button variant="ghost" size="sm" className="hidden sm:flex">
                 <Bell className="w-4 h-4" />
               </Button>
               <div className="flex items-center gap-2 pl-3 border-l border-border">
                 <div className="flex flex-col items-end text-sm">
-                  <span className="font-medium">Rajesh Kumar</span>
-                  <span className="text-xs text-muted-foreground">Investor</span>
+                  <span className="font-medium">{user.first_name || user.email}</span>
+                  {role && <span className="text-xs text-muted-foreground capitalize">{role}</span>}
                 </div>
                 <img
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=rajesh"
+                  src={user.profile_pic || `https://api.dicebear.com/7.x/personas/svg?seed=${user.email}`}
                   alt="Profile"
                   className="w-8 h-8 rounded-full"
                 />

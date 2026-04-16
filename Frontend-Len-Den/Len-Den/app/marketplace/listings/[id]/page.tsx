@@ -5,17 +5,17 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { mockAssets } from '@/lib/data/mockAssets';
+import {InvestmentModal} from '@/components/marketplace/InvestmentModal';
+import { API_ENDPOINTS } from '@/lib/constants/apiConfig';
+import type { Asset } from '@/lib/services/blockchainService';
+import { Badge } from '@/components/ui/badge';]
 import { formatCurrency, formatPercent } from '@/lib/utils/formatters';
 import {
   ArrowLeft,
   TrendingUp,
   Shield,
-  Calendar,
   MapPin,
-  FileText,
-  Download,
+  Loader2,
   AlertCircle,
   Images,
   X,
@@ -168,6 +168,9 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 export default function AssetDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const [asset, setAsset] = useState<Asset | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [investmentAmount, setInvestmentAmount] = useState('');
   const [activeTab, setActiveTab] = useState<Tab>('details');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -175,9 +178,72 @@ export default function AssetDetailsPage() {
   const [isInvesting, setIsInvesting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const asset = mockAssets.find((a) => a.id === params.id);
+  useEffect(() => {
+    const fetchAsset = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        
+        // Fetch all assets and find the one with matching ID
+        const response = await fetch(API_ENDPOINTS.GET_ASSETS);
 
-  if (!asset) {
+        if (!response.ok) {
+          throw new Error('Failed to fetch assets');
+        }
+
+        const data = await response.json();
+        const foundAsset = data.assets.find((a: Asset) => a.id.toString() === params.id);
+
+        if (!foundAsset) {
+          setError('Asset not found');
+          return;
+        }
+
+        // Validate asset has required fields for blockchain transactions
+        if (!foundAsset.asa_id) {
+          setError('Asset configuration incomplete - missing ASA ID');
+          return;
+        }
+
+        if (!foundAsset.owner?.wallet_address) {
+          setError('Asset configuration incomplete - missing owner wallet');
+          return;
+        }
+
+        setAsset(foundAsset);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load asset';
+        setError(errorMessage);
+        console.error('Error fetching asset:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (params.id) {
+      fetchAsset();
+    }
+  }, [params.id]);
+
+  const handleInvest = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleModalSuccess = () => {
+    setIsModalOpen(false);
+    setInvestmentAmount('');
+    router.push('/marketplace/listings');
+  };
+
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  if (error || !asset) {
     return (
       <div className="p-8 text-center">
         <Button variant="outline" onClick={() => router.back()} className="mb-6">
