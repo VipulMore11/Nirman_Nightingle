@@ -24,14 +24,16 @@ def validate_file(file_obj):
         raise ValidationError("No file provided")
     
     # Check file size
-    max_size = settings.KYC_FILE_UPLOAD_SETTINGS['max_file_size']
-    if file_obj.size > max_size:
-        raise ValidationError(
-            f"File size exceeds maximum allowed size of {max_size / (1024*1024):.1f}MB"
-        )
+    # max_size = settings.KYC_FILE_UPLOAD_SETTINGS['max_file_size']
+    # if file_obj.size > max_size:
+    #     raise ValidationError(
+    #         f"File size exceeds maximum allowed size of {max_size / (1024*1024):.1f}MB"
+    #     )
     
     # Check file extension
-    allowed_formats = settings.KYC_FILE_UPLOAD_SETTINGS['allowed_formats']
+    # allowed_formats = settings.KYC_FILE_UPLOAD_SETTINGS['allowed_formats']
+    allowed_formats = ['jpg', 'jpeg', 'png', 'pdf']
+
     file_ext = file_obj.name.split('.')[-1].lower()
     if file_ext not in allowed_formats:
         raise ValidationError(
@@ -61,10 +63,10 @@ def upload_to_cloudinary(file_obj, document_type):
         validate_file(file_obj)
         
         # Prepare upload options
-        folder_prefix = settings.KYC_FILE_UPLOAD_SETTINGS['folder_prefix']
+        # folder_prefix = settings.KYC_FILE_UPLOAD_SETTINGS['folder_prefix']
         
         upload_options = {
-            'folder': f'{folder_prefix}',
+            'folder': 'kyc_documents',
             'resource_type': 'auto',
             'public_id': f'{document_type}_{file_obj.name.split(".")[0]}',
             'overwrite': True,

@@ -18,7 +18,6 @@ from django.shortcuts import get_object_or_404
 from .services.transaction_service import create_atomic_buy, create_atomic_sell
 
 from algosdk import encoding
-from .services.transaction_service import create_atomic_buy, create_atomic_sell
 from .services.algorand_service import algod_client
 
 @api_view(['POST'])

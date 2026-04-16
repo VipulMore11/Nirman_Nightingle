@@ -36,17 +36,22 @@ def create_asset_with_documents(request):
     - title: Asset title
     - description: Asset description
     - total_supply: Total fractional units
-    - unit_price: Price per unit
+    - unit_price: Price per unit (in cents, as integer)
     - creator_wallet: Wallet address creating the asset
     - metadata_json: Optional additional metadata (JSON string)
     
     File uploads (optional):
-    - property_image_files: Multiple property images
-    - property_image_names: Names for each property image (comma-separated or array)
-    - legal_document_files: Multiple legal documents
-    - legal_document_names: Names for each document
-    - certificate_files: Multiple certificates
-    - certificate_names: Names for each certificate
+    - property_image_files: Multiple property images (can be single or multiple)
+    - property_image_names: Names for each property image (JSON array or comma-separated)
+    - legal_document_files: Multiple legal documents (can be single or multiple)
+    - legal_document_names: Names for each document (JSON array or comma-separated)
+    - certificate_files: Multiple certificates (can be single or multiple)
+    - certificate_names: Names for each certificate (JSON array or comma-separated)
+    
+    Notes:
+    - All file lists must have matching number of names
+    - Names can be sent as JSON array string or standard list format
+    - The endpoint handles both single and multiple file uploads correctly
     """
     try:
         # Use the serializer to handle file uploads and validation

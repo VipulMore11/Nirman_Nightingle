@@ -1,7 +1,8 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
-from . import blockchain_views 
+from . import blockchain_views
+from . import seller_views
 
 app_name = 'Authentication'
 
@@ -29,4 +30,17 @@ urlpatterns = [
     path('marketplace/confirm-sell/', views.confirm_sell, name='confirm_sell'),
     path('marketplace/transactions/', views.transaction_history, name='transaction_history'),
     path('marketplace/assets/', views.get_assets, name='get_assets'),
+
+    # Seller endpoints
+    path('marketplace/my-assets/', seller_views.get_my_assets, name='my_assets'),
+    path('marketplace/my-assets/<int:asset_id>/', seller_views.get_my_asset_detail, name='my_asset_detail'),
+
+    # Admin endpoints
+    path('admin/assets/pending/', seller_views.get_pending_assets, name='pending_assets'),
+    path('admin/assets/<int:asset_id>/approve/', seller_views.approve_asset, name='approve_asset'),
+    path('admin/assets/<int:asset_id>/reject/', seller_views.reject_asset, name='reject_asset'),
+    path('admin/assets/<int:asset_id>/resubmit/', seller_views.resubmit_for_review, name='resubmit_asset'),
+    
+    # Blockchain endpoints
+    path('submit_asa_transaction/', seller_views.submit_asa_transaction, name='submit_asa_transaction'),
 ]

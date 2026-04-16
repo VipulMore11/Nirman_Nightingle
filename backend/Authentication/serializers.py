@@ -1,3 +1,4 @@
+import json
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -324,7 +325,7 @@ class AssetCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = [
-            'title', 'description', 'total_supply', 'unit_price', 
+            'title', 'description', 'total_supply', 'unit_price', 'creator_wallet',
             'metadata_json', 'property_images', 'legal_documents', 'certificates',
             'property_image_files', 'legal_document_files', 'certificate_files',
             'property_image_names', 'legal_document_names', 'certificate_names'
@@ -343,28 +344,78 @@ class AssetCreateUpdateSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         """Validate file and name mappings"""
-        # Check property images
+        
+        def normalize_names(names_input):
+            """Convert various name formats to clean list of strings"""
+            if not names_input:
+                return []
+            
+            # If it's a list with one JSON string element, parse it
+            if isinstance(names_input, list) and len(names_input) == 1 and isinstance(names_input[0], str):
+                try:
+                    parsed = json.loads(names_input[0])
+                    if isinstance(parsed, list):
+                        return parsed
+                except Exception:
+                    pass
+            
+            # If it's a string (JSON), parse it
+            if isinstance(names_input, str):
+                try:
+                    parsed = json.loads(names_input)
+                    if isinstance(parsed, list):
+                        return parsed
+                except Exception:
+                    return [names_input]
+            
+            # If it's already a list, return as-is
+            if isinstance(names_input, list):
+                return names_input
+            
+            return [names_input] if names_input else []
+        
+        # Normalize file inputs - convert single files to lists
         property_files = data.get('property_image_files', [])
-        property_names = data.get('property_image_names', [])
+        if property_files and not isinstance(property_files, list):
+            property_files = [property_files]
+            data['property_image_files'] = property_files
+        
+        # Normalize and parse names
+        property_names = normalize_names(data.get('property_image_names', []))
+        data['property_image_names'] = property_names
+        
+        # Check property images
         if property_files and len(property_files) != len(property_names):
             raise serializers.ValidationError(
-                "Number of property image names must match number of files"
+                f"Number of property image names ({len(property_names)}) must match number of files ({len(property_files)})"
             )
         
-        # Check legal documents
+        # Normalize legal document inputs and names
         doc_files = data.get('legal_document_files', [])
-        doc_names = data.get('legal_document_names', [])
+        if doc_files and not isinstance(doc_files, list):
+            doc_files = [doc_files]
+            data['legal_document_files'] = doc_files
+        
+        doc_names = normalize_names(data.get('legal_document_names', []))
+        data['legal_document_names'] = doc_names
+        
         if doc_files and len(doc_files) != len(doc_names):
             raise serializers.ValidationError(
-                "Number of legal document names must match number of files"
+                f"Number of legal document names ({len(doc_names)}) must match number of files ({len(doc_files)})"
             )
         
-        # Check certificates
+        # Normalize certificate inputs and names
         cert_files = data.get('certificate_files', [])
-        cert_names = data.get('certificate_names', [])
+        if cert_files and not isinstance(cert_files, list):
+            cert_files = [cert_files]
+            data['certificate_files'] = cert_files
+        
+        cert_names = normalize_names(data.get('certificate_names', []))
+        data['certificate_names'] = cert_names
+        
         if cert_files and len(cert_files) != len(cert_names):
             raise serializers.ValidationError(
-                "Number of certificate names must match number of files"
+                f"Number of certificate names ({len(cert_names)}) must match number of files ({len(cert_files)})"
             )
         
         return data
