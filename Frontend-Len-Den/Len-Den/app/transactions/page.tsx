@@ -2,16 +2,17 @@
 
 import { Header, Sidebar, TransactionItem } from '@/components/common'
 import { Card } from '@/components/ui/card'
-import { currentUser } from '@/lib/data/mockUsers'
+import { useAuth } from '@/lib/context/AuthContext'
 import { mockTransactions } from '@/lib/data/mockTransactions'
 import { mockAssets } from '@/lib/data/mockAssets'
 import { useState } from 'react'
 
 export default function TransactionsPage() {
+  const { user } = useAuth()
   const [filter, setFilter] = useState<'all' | 'buy' | 'sell' | 'dividend'>('all')
 
   const userTransactions = mockTransactions
-    .filter((t) => t.userId === currentUser.id)
+    .filter((t) => t.userId === `user-${user?.id}`)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   const filteredTransactions = filter === 'all' ? userTransactions : userTransactions.filter(t => t.type === filter)

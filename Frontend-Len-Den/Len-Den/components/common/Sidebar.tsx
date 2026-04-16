@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -18,9 +18,10 @@ import {
   Package,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/context/AuthContext';
 import { useState } from 'react';
 
-const navItems = [
+const userNavItems = [
   {
     href: '/dashboard',
     label: 'Dashboard',
@@ -58,12 +59,6 @@ const navItems = [
     regex: /^\/transactions/,
   },
   {
-    href: '/admin/dashboard',
-    label: 'Admin',
-    icon: BarChart3,
-    regex: /^\/admin/,
-  },
-  {
     href: '/profile',
     label: 'Profile',
     icon: User,
@@ -83,14 +78,62 @@ const navItems = [
   },
 ];
 
+const adminNavItems = [
+  {
+    href: '/admin/dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    regex: /^\/admin\/dashboard$/,
+  },
+  {
+    href: '/admin/users',
+    label: 'Users',
+    icon: User,
+    regex: /^\/admin\/users/,
+  },
+  {
+    href: '/admin/verification',
+    label: 'KYC Verification',
+    icon: Package,
+    regex: /^\/admin\/verification/,
+  },
+  {
+    href: '/admin/listings',
+    label: 'Listings',
+    icon: ShoppingCart,
+    regex: /^\/admin\/listings/,
+  },
+  {
+    href: '/admin/audit-log',
+    label: 'Audit Log',
+    icon: History,
+    regex: /^\/admin\/audit-log/,
+  },
+  {
+    href: '/settings',
+    label: 'Settings',
+    icon: Settings,
+    regex: /^\/settings/,
+  },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
   const [open, setOpen] = useState(false);
-  const isLoggedIn = !pathname.includes('/auth');
 
-  if (!isLoggedIn) {
+  if (!isAuthenticated) {
     return null;
   }
+
+  const navItems = isAdmin ? adminNavItems : userNavItems;
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/auth/login');
+    setOpen(false);
+  };
 
   return (
     <>
@@ -109,7 +152,9 @@ export function Sidebar() {
         }`}
       >
         <div className="p-4 border-b border-sidebar-border">
-          <h2 className="font-semibold text-sidebar-foreground">Navigation</h2>
+          <h2 className="font-semibold text-sidebar-foreground">
+            {isAdmin ? 'Admin Panel' : 'Navigation'}
+          </h2>
         </div>
 
         <div className="p-4 space-y-2">
@@ -135,12 +180,14 @@ export function Sidebar() {
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
-          <Link href="/auth/login" onClick={() => setOpen(false)}>
-            <Button variant="outline" className="w-full justify-start gap-3">
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-3"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
         </div>
       </nav>
 

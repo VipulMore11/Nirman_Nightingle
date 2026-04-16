@@ -7,9 +7,9 @@ import { useAuth } from '@/lib/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Shield } from 'lucide-react';
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,8 +26,10 @@ export default function LoginPage() {
     }
 
     try {
-      await login(email, password);
-      router.push('/dashboard');
+      const response = await login(email, password);
+      // Check if user is admin after login
+      // The login function stores user in context, we can check the role
+      router.push('/admin/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     }
@@ -38,11 +40,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-accent rounded-lg mb-4">
-            <span className="font-bold text-lg text-accent-foreground">AH</span>
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-500 rounded-lg mb-4">
+            <Shield className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-2xl font-bold">LenDen</h1>
-          <p className="text-muted-foreground mt-2">Investor Login</p>
+          <p className="text-muted-foreground mt-2">Admin Portal</p>
         </div>
 
         <Card className="p-8 border-border bg-card">
@@ -54,13 +56,19 @@ export default function LoginPage() {
               </div>
             )}
 
+            <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
+              <p className="text-sm text-orange-700 dark:text-orange-400">
+                This portal is restricted to administrators only. Unauthorized access attempts will be logged.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="admin@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -84,36 +92,19 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded" disabled={isLoading} />
-                <span>Remember me</span>
-              </label>
-              <Link href="#" className="text-accent hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-
             <Button
               type="submit"
-              className="w-full bg-accent hover:bg-accent/90"
+              className="w-full bg-orange-600 hover:bg-orange-700"
               disabled={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Signing in...' : 'Sign In as Admin'}
             </Button>
           </form>
 
           <div className="mt-6 pt-6 border-t border-border text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
-            <Link href="/auth/signup" className="text-accent hover:underline font-medium">
-              Sign up
-            </Link>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-border text-center text-sm">
-            <span className="text-muted-foreground">Are you an admin? </span>
-            <Link href="/auth/admin-login" className="text-accent hover:underline font-medium">
-              Admin login
+            <span className="text-muted-foreground">Are you an investor? </span>
+            <Link href="/auth/login" className="text-accent hover:underline font-medium">
+              User login
             </Link>
           </div>
         </Card>

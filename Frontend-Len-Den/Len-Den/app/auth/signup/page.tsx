@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -10,16 +11,19 @@ import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
-    name: '',
+    first_name: '',
+    last_name: '',
     email: '',
+    username: '',
     password: '',
     confirmPassword: '',
+    sex: 'other',
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { signup, isLoading } = useAuth();
   const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -28,21 +32,49 @@ export default function SignupPage() {
     e.preventDefault();
     setError('');
 
+    if (!formData.first_name || !formData.last_name) {
+      setError('Please enter your first and last name');
+      return;
+    }
+
+    if (!formData.email) {
+      setError('Please enter a valid email');
+      return;
+    }
+
+    if (!formData.username) {
+      setError('Please enter a username');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    setLoading(true);
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
 
-    setTimeout(() => {
-      if (formData.name && formData.email && formData.password) {
-        router.push('/auth/onboarding/step-1-kyc');
-      } else {
-        setError('Please fill in all fields');
-      }
-      setLoading(false);
-    }, 800);
+    try {
+      // Generate dicebear profile pic URL based on email
+      const profilePicUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.email}`;
+      
+      await signup(
+        formData.email,
+        formData.password,
+        formData.first_name,
+        formData.last_name,
+        formData.username,
+        formData.sex,
+        profilePicUrl
+      );
+      // After successful signup, redirect to login page
+      router.push('/auth/login');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Signup failed. Please try again.');
+    }
   };
 
   return (
@@ -54,11 +86,11 @@ export default function SignupPage() {
             <span className="font-bold text-lg text-accent-foreground">AH</span>
           </div>
           <h1 className="text-2xl font-bold">Create Your Account</h1>
-          <p className="text-muted-foreground mt-2">Join LenDenand start investing</p>
+          <p className="text-muted-foreground mt-2">Join LenDen and start investing</p>
         </div>
 
         <Card className="p-8 border-border bg-card">
-          <form onSubmit={handleSignup} className="space-y-6">
+          <form onSubmit={handleSignup} className="space-y-4">
             {error && (
               <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex gap-2">
                 <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
@@ -66,17 +98,43 @@ export default function SignupPage() {
               </div>
             )}
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">First Name</label>
+                <Input
+                  type="text"
+                  name="first_name"
+                  placeholder="John"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Last Name</label>
+                <Input
+                  type="text"
+                  name="last_name"
+                  placeholder="Doe"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Full Name</label>
+              <label className="text-sm font-medium">Username</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
-                  name="name"
-                  placeholder="Your full name"
-                  value={formData.name}
+                  name="username"
+                  placeholder="johndoe"
+                  value={formData.username}
                   onChange={handleChange}
                   className="pl-10"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -92,8 +150,24 @@ export default function SignupPage() {
                   value={formData.email}
                   onChange={handleChange}
                   className="pl-10"
+                  disabled={isLoading}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Gender</label>
+              <select
+                name="sex"
+                value={formData.sex}
+                onChange={handleChange}
+                className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+                disabled={isLoading}
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
             </div>
 
             <div className="space-y-2">
@@ -107,6 +181,7 @@ export default function SignupPage() {
                   value={formData.password}
                   onChange={handleChange}
                   className="pl-10"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -122,30 +197,17 @@ export default function SignupPage() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   className="pl-10"
+                  disabled={isLoading}
                 />
               </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" id="terms" />
-              <label htmlFor="terms" className="cursor-pointer">
-                I agree to the{' '}
-                <Link href="#" className="text-accent hover:underline">
-                  Terms of Service
-                </Link>
-                {' '}and{' '}
-                <Link href="#" className="text-accent hover:underline">
-                  Privacy Policy
-                </Link>
-              </label>
             </div>
 
             <Button
               type="submit"
               className="w-full bg-accent hover:bg-accent/90"
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? 'Creating account...' : 'Create Account'}
+              {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
           </form>
 
