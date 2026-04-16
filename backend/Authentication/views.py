@@ -518,3 +518,73 @@ def transaction_history(request):
     })
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_assets(request):
+    """
+    Get list of active assets available for investment in marketplace.
+    Filters by status and available supply.
+    Supports optional filtering by category and search.
+    """
+    try:
+        # Get active assets with available supply
+        assets = Asset.objects.filter(
+            listing_status='active',
+            is_verified=True
+        ).exclude(available_supply=0)
+
+        # Optional search filter
+        search = request.query_params.get('search', '').strip()
+        if search:
+            from django.db.models import Q
+            assets = assets.filter(
+                Q(title__icontains=search) | 
+                Q(description__icontains=search)
+            )
+
+        # Pagination
+        page = int(request.query_params.get('page', 1))
+        per_page = int(request.query_params.get('per_page', 12))
+        
+        start = (page - 1) * per_page
+        end = start + per_page
+        
+        total_count = assets.count()
+        assets_paginated = assets[start:end]
+
+        assets_data = []
+        for asset in assets_paginated:
+            assets_data.append({
+                'id': asset.id,
+                'asa_id': asset.asa_id,
+                'title': asset.title,
+                'description': asset.description,
+                'photo': asset.property_images,
+                'unit_price': float(asset.unit_price),
+                'total_supply': float(asset.total_supply),
+                'available_supply': float(asset.available_supply),
+                'owner': {
+                    'id': asset.owner.id,
+                    'email': asset.owner.email,
+                    'first_name': asset.owner.first_name,
+                    'wallet_address': asset.owner.wallet_address
+                },
+                'creator_wallet': asset.creator_wallet,
+                'created_at': asset.created_at.isoformat(),
+                'listed_at': asset.listed_at.isoformat() if asset.listed_at else None
+            })
+
+        return Response({
+            'total': total_count,
+            'page': page,
+            'per_page': per_page,
+            'assets': assets_data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': str(e),
+            'error_code': 'get_assets_error'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+

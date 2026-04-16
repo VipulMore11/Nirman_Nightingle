@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from .managers import CustomUserManager
 from django.contrib.auth.models import AbstractUser
+import json
 
 class User(AbstractUser):
 
@@ -108,7 +109,9 @@ class Asset(models.Model):
     creator_wallet = models.TextField(max_length=255)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    photo = models.TextField(blank=True, null=True)  # Store as base64 or URL
+    
+    # Property Images - JSON array: [{name, url, file_type}, ...]
+    property_images = models.JSONField(default=list, blank=True)
     
     # Asset-specific fields
     asa_id = models.BigIntegerField(unique=True, null=True, blank=True)  # Algorand ASA ID
@@ -117,7 +120,8 @@ class Asset(models.Model):
     unit_price = models.DecimalField(max_digits=15, decimal_places=4)  # Price per fractional unit
     
     # Legal & metadata
-    legal_documents = models.TextField(blank=True, null=True)  # Store JSON or file path
+    legal_documents = models.JSONField(default=dict, blank=True)  # JSON object mapping: {document_name: url}
+    certificates = models.JSONField(default=list, blank=True)  # JSON array: [{name, url, file_type}, ...]
     metadata_json = models.TextField(blank=True, null=True)  # Additional metadata
     
     # Status & tracking

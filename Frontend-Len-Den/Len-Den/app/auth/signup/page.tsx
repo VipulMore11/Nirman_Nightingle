@@ -8,10 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Mail, Lock, User, AlertCircle, Wallet, CheckCircle2, XCircle } from 'lucide-react';
 import { usePeraWallet } from '@/hooks/usePeraWallet';
+import { signup, storeAuth } from '@/lib/utils/authService';
 
 /** Shorten a wallet address for display: ABCD…WXYZ */
 function shortenAddress(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
+/** Generate username from email */
+function generateUsername(email: string): string {
+  return email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 7);
 }
 
 export default function SignupPage() {
@@ -41,6 +47,11 @@ export default function SignupPage() {
       return;
     }
 
+    if (!formData.name || !formData.email || !formData.password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -48,14 +59,30 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    setTimeout(() => {
-      if (formData.name && formData.email && formData.password) {
-        router.push('/auth/onboarding/step-1-kyc');
-      } else {
-        setError('Please fill in all fields');
-      }
+    try {
+      // Split full name into first and last name
+      const nameParts = formData.name.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+      const username = generateUsername(formData.email);
+
+      const response = await signup(
+        formData.email,
+        formData.password,
+        firstName,
+        lastName,
+        username,
+        'not_specified' // Default sex value
+      );
+
+      storeAuth(response);
+      router.push('/auth/login');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Signup failed. Please try again.';
+      setError(errorMessage);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   return (

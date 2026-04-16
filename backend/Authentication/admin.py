@@ -8,13 +8,13 @@ admin.site.register(User)
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    list_display = ('title', 'owner', 'asa_id', 'total_supply', 'available_supply', 'unit_price', 'listing_status', 'is_verified', 'created_at')
+    list_display = ('title', 'owner', 'creator_wallet', 'asa_id', 'total_supply', 'available_supply', 'unit_price', 'listing_status', 'is_verified', 'created_at')
     list_filter = ('listing_status', 'is_verified', 'created_at')
-    search_fields = ('title', 'description', 'owner__email', 'asa_id')
+    search_fields = ('title', 'description', 'owner__email', 'creator_wallet', 'asa_id')
     readonly_fields = ('created_at', 'updated_at', 'asa_id')
     fieldsets = (
         ('Basic Information', {
-            'fields': ('owner', 'title', 'description', 'photo')
+            'fields': ('owner', 'title', 'description', 'property_images', 'creator_wallet')
         }),
         ('Asset Details', {
             'fields': ('asa_id', 'total_supply', 'available_supply', 'unit_price')
@@ -46,7 +46,7 @@ class ListingAdmin(admin.ModelAdmin):
     list_display = ('seller', 'asset', 'quantity_available', 'price_per_unit', 'total_price', 'listing_type', 'is_active', 'created_at')
     list_filter = ('listing_type', 'is_active', 'created_at')
     search_fields = ('seller__email', 'asset__title')
-    readonly_fields = ('created_at', 'total_price')
+    readonly_fields = ('created_at',)
 
 
 @admin.register(Transaction)
@@ -73,3 +73,9 @@ class TransactionAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+@admin.register(KYC)
+class KYCAdmin(admin.ModelAdmin):
+    list_display = ('user', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('user__email',)

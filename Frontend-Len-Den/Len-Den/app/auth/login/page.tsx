@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { login, storeAuth } from '@/lib/utils/authService';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('rajesh@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -18,16 +19,24 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    if (!email || !password) {
+      setError('Please enter valid credentials');
+      return;
+    }
+    
     setLoading(true);
 
-    setTimeout(() => {
-      if (email && password) {
-        router.push('/dashboard');
-      } else {
-        setError('Please enter valid credentials');
-      }
+    try {
+      const response = await login(email, password);
+      storeAuth(response);
+      router.push('/dashboard');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
+      setError(errorMessage);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -106,14 +115,14 @@ export default function LoginPage() {
           </div>
         </Card>
 
-        {/* Demo Credentials */}
+        {/* Demo Credentials
         <div className="mt-6 p-4 rounded-lg bg-card border border-border/50">
           <p className="text-xs font-semibold text-muted-foreground mb-2">Demo Credentials</p>
           <div className="space-y-1 text-xs text-muted-foreground">
             <p>Email: rajesh@example.com</p>
             <p>Password: password123</p>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
