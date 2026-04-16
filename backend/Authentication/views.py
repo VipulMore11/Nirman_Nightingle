@@ -1,5 +1,6 @@
 from django.utils import timezone
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -110,16 +111,43 @@ def update_profile(request):
         return Response({'Error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
 @permission_classes([IsAuthenticated])
 def submit_kyc(request):
-    kyc = request.user.kyc
+    """
+    Submit KYC documents (Aadhaar, PAN, Passport, and Selfie).
+    
+    Accepts multipart/form-data with the following optional fields:
+    - aadhaar_file: JPG/PNG file (≤5MB)
+    - pan_file: JPG/PNG file (≤5MB)
+    - passport_file: JPG/PNG file (≤5MB)
+    - selfie_file: JPG/PNG file (≤5MB) - REQUIRED
+    - aadhaar_number: String (optional)
+    - pan_number: String (optional)
+    - passport_number: String (optional)
+    - address_line: String (optional)
+    - city: String (optional)
+    - state: String (optional)
+    - pincode: String (optional)
+    
+    At least one identity document (Aadhaar, PAN, or Passport) and a selfie are required.
+    Files are uploaded to Cloudinary, and URLs are stored in the database.
+    
+    Returns: KYC record with document URLs
+    """
+    try:
+        kyc = request.user.kyc
+    except KYC.DoesNotExist:
+        # Create a new KYC record if it doesn't exist
+        kyc = KYC.objects.create(user=request.user)
+    
     serializer = KYCSerializer(instance=kyc, data=request.data, partial=True)
 
     if serializer.is_valid():
         serializer.save(status='pending')
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    return Response(serializer.errors, status=400)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
