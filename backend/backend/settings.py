@@ -209,18 +209,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
 # Celery Beat Scheduler (periodic tasks)
-from celery.schedules import crontab
-
-CELERY_BEAT_SCHEDULE = {
-    'check-quorum-every-hour': {
-        'task': 'discussion.tasks.task_check_quorum_periodically',
-        'schedule': crontab(minute=0),  # Every hour at :00
-    },
-    'sync-token-supply-daily': {
-        'task': 'discussion.tasks.task_sync_token_supply',
-        'schedule': crontab(hour=0, minute=0),  # Daily at midnight UTC
-    },
-}
+# from celery.schedules import crontab
+# CELERY_BEAT_SCHEDULE = {}
 
 # Governance Business Rules (constants)
 MIN_HOLDER_PERCENTAGE = 5  # Minimum 5% to vote/comment/propose

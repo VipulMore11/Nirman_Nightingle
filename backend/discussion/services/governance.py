@@ -6,7 +6,7 @@ Governance business logic:
 - Proposal extensions
 - Vote finalization
 """
-import logging
+
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional, Tuple
@@ -14,8 +14,6 @@ from typing import Optional, Tuple
 from django.utils import timezone
 from discussion.models import Proposal, VoteRecord, Notification, Company
 from discussion.services.blockchain import blockchain_service
-
-logger = logging.getLogger(__name__)
 
 # Constants
 MIN_HOLDER_PERCENTAGE = Decimal('5')  # Minimum 5% to vote/comment
@@ -58,15 +56,9 @@ class GovernanceService:
             # Calculate 5% of total supply
             threshold = (company.total_supply * MIN_HOLDER_PERCENTAGE) / Decimal('100')
             
-            result = balance >= threshold
-            logger.info(
-                f"Large holder check: {wallet_address[:8]}... "
-                f"balance={balance}, threshold={threshold}, result={result}"
-            )
-            return result
+            return balance >= threshold
 
         except Exception as e:
-            logger.error(f"Error in is_large_holder: {str(e)}")
             return False
 
     @staticmethod
@@ -84,7 +76,6 @@ class GovernanceService:
         """
         # Must be in discussion phase
         if proposal.status != 'DISCUSSION':
-            logger.info(f"Proposal {proposal.id} not in DISCUSSION phase")
             return False
         
         # Must be large holder
@@ -111,7 +102,6 @@ class GovernanceService:
         """
         # Must be in voting phase
         if proposal.status != 'VOTING':
-            logger.info(f"Proposal {proposal.id} not in VOTING phase")
             return False
         
         # Check if already voted
@@ -119,7 +109,6 @@ class GovernanceService:
             proposal=proposal,
             voter_address=user_address
         ).exists():
-            logger.info(f"User {user_address[:8]}... already voted on {proposal.id}")
             return False
         
         # Must be large holder at snapshot block
@@ -130,7 +119,7 @@ class GovernanceService:
         )
         
         if not is_holder:
-            logger.info(f"User {user_address[:8]}... not large holder at snapshot")
+            pass
         
         return is_holder
 
@@ -149,7 +138,6 @@ class GovernanceService:
         try:
             # Must be in DISCUSSION phase
             if proposal.status != 'DISCUSSION':
-                logger.warning(f"Cannot start voting: proposal not in DISCUSSION phase")
                 return False
             
             # Get current block as snapshot
@@ -163,11 +151,9 @@ class GovernanceService:
             proposal.status = 'VOTING'
             proposal.save()
             
-            logger.info(f"Proposal {proposal.id} started voting at block {current_block}")
             return True
 
         except Exception as e:
-            logger.error(f"Error starting voting: {str(e)}")
             return False
 
     @staticmethod
@@ -209,16 +195,9 @@ class GovernanceService:
             proposal.quorum_reached = quorum_reached
             proposal.save()
             
-            logger.info(
-                f"Quorum check for proposal {proposal.id}: "
-                f"votes={total_votes}, threshold={quorum_threshold}, "
-                f"reached={quorum_reached}"
-            )
-            
             return quorum_reached
 
         except Exception as e:
-            logger.error(f"Error calculating quorum: {str(e)}")
             return False
 
     @staticmethod
@@ -235,12 +214,10 @@ class GovernanceService:
         """
         # Must be past voting end
         if timezone.now() <= proposal.voting_end:
-            logger.info(f"Proposal {proposal.id} voting still active")
             return False
         
         # Must not have reached max extensions
         if proposal.extension_count >= MAX_EXTENSIONS:
-            logger.info(f"Proposal {proposal.id} at max extensions")
             return False
         
         # Extend voting period
@@ -248,7 +225,6 @@ class GovernanceService:
         proposal.extension_count += 1
         proposal.save()
         
-        logger.info(f"Proposal {proposal.id} extended (count={proposal.extension_count})")
         return True
 
     @staticmethod
@@ -267,12 +243,10 @@ class GovernanceService:
         try:
             # Must be in VOTING phase
             if proposal.status != 'VOTING':
-                logger.warning(f"Proposal {proposal.id} not in VOTING phase")
                 return False
             
             # Check if voting period has ended
             if timezone.now() <= proposal.voting_end:
-                logger.info(f"Proposal {proposal.id} voting still active")
                 return False
             
             # Calculate quorum
@@ -281,7 +255,6 @@ class GovernanceService:
             if not proposal.quorum_reached:
                 # Try to extend
                 if GovernanceService.apply_extensions(proposal):
-                    logger.info(f"Proposal {proposal.id} extended, not finalized yet")
                     return False
                 else:
                     # No more extensions - proposal dies
@@ -291,7 +264,6 @@ class GovernanceService:
                     # Notify voters
                     GovernanceService.notify_proposal_died(proposal)
                     
-                    logger.info(f"Proposal {proposal.id} died (no quorum, no extensions left)")
                     return True
             
             # Quorum reached - determine outcome
@@ -301,11 +273,9 @@ class GovernanceService:
                 proposal.status = 'FAILED'
             
             proposal.save()
-            logger.info(f"Proposal {proposal.id} finalized: {proposal.status}")
             return True
 
         except Exception as e:
-            logger.error(f"Error finalizing proposal: {str(e)}")
             return False
 
     @staticmethod
@@ -369,7 +339,6 @@ class GovernanceService:
             )
             
             if not can_veto:
-                logger.warning(f"Cannot veto proposal {proposal.id}: {reason}")
                 return False
             
             # Send veto transaction
@@ -383,11 +352,9 @@ class GovernanceService:
             proposal.veto_date = timezone.now()
             proposal.save()
             
-            logger.info(f"Proposal {proposal.id} vetoed (tx: {tx_hash})")
             return True
 
         except Exception as e:
-            logger.error(f"Error executing veto: {str(e)}")
             return False
 
     @staticmethod
@@ -416,10 +383,9 @@ class GovernanceService:
             ]
             
             Notification.objects.bulk_create(notifications)
-            logger.info(f"Created {len(notifications)} notifications for proposal {proposal.id}")
 
         except Exception as e:
-            logger.error(f"Error notifying proposal death: {str(e)}")
+            pass
 
     @staticmethod
     def sync_votes_from_blockchain(proposal: Proposal) -> None:
@@ -433,10 +399,10 @@ class GovernanceService:
         try:
             # This would use blockchain_service to listen for events
             # Implementation depends on specific blockchain setup
-            logger.info(f"Syncing votes for proposal {proposal.id}")
+            pass
 
         except Exception as e:
-            logger.error(f"Error syncing votes: {str(e)}")
+            pass
 
 
 # Import here to avoid circular imports

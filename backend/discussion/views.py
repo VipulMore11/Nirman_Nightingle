@@ -1,7 +1,6 @@
 """
 Django REST Framework views for governance API.
 """
-import logging
 from decimal import Decimal
 
 from rest_framework import viewsets, status
@@ -25,8 +24,6 @@ from discussion.serializers import (
 )
 from discussion.services.governance import GovernanceService
 from discussion.services.blockchain import blockchain_service
-
-logger = logging.getLogger(__name__)
 
 
 class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
@@ -141,8 +138,6 @@ class ProposalViewSet(viewsets.ModelViewSet):
         proposal.status = 'DISCUSSION'
         proposal.discussion_end = timezone.now() + timezone.timedelta(days=3)
         proposal.save()
-        
-        logger.info(f"Proposal {proposal.id} started discussion")
         
         return Response(
             ProposalDetailSerializer(proposal).data,
@@ -309,8 +304,6 @@ class ProposalViewSet(viewsets.ModelViewSet):
             # Update proposal vote counts
             GovernanceService.calculate_quorum(proposal)
             
-            logger.info(f"Vote recorded: {voter[:8]}... voted {choice} on {proposal.id}")
-            
             return Response(
                 {
                     'success': True,
@@ -321,7 +314,6 @@ class ProposalViewSet(viewsets.ModelViewSet):
             )
         
         except Exception as e:
-            logger.error(f"Error recording vote: {str(e)}")
             return Response(
                 {'error': f'Failed to record vote: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -424,7 +416,6 @@ class ProposalViewSet(viewsets.ModelViewSet):
                 )
         
         except Exception as e:
-            logger.error(f"Error executing veto: {str(e)}")
             return Response(
                 {'error': f'Veto failed: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
