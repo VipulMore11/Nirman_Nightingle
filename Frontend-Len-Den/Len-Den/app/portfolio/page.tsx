@@ -179,7 +179,7 @@ export default function PortfolioPage() {
             <LineChart data={performanceData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2d3748" />
               <XAxis dataKey="date" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`} />
+              <YAxis stroke="#94a3b8" tickFormatter={(value) => `₹${(value / 100000).toFixed(1)}L`} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#1a1f3a',

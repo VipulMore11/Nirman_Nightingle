@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, TrendingDown, DollarSign, Zap } from 'lucide-react'
+import { ArrowLeft, TrendingDown, IndianRupee, Zap } from 'lucide-react'
 
 interface SellOrderFormProps {
   assetId: string
@@ -93,7 +93,7 @@ export function SellOrderForm({
               {orderType === 'market' ? 'Current Price' : 'Limit Price'}
             </label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="number"
                 value={orderType === 'market' ? currentPrice.toFixed(2) : limitPrice.toFixed(2)}

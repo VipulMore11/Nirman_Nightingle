@@ -27,7 +27,7 @@ import {
   Layers,
   CheckCircle,
   Clock,
-  DollarSign,
+  IndianRupee,
   Building2,
   Users,
   Award,
@@ -171,7 +171,7 @@ type Tab = 'details' | 'financials' | 'documents' | 'market';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'details',    label: 'Details',    icon: Home },
-  { id: 'financials', label: 'Financials', icon: DollarSign },
+  { id: 'financials', label: 'Financials', icon: IndianRupee },
   { id: 'documents',  label: 'Documents',  icon: FileText },
   { id: 'market',     label: 'Market',     icon: BarChart3 },
 ];
@@ -395,7 +395,7 @@ export default function HoldingDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     { label: 'Units Owned', value: holding.unitsOwned.toLocaleString(), icon: Layers },
-                    { label: 'Unit Price Paid', value: formatCurrency(holding.unitPrice), icon: DollarSign },
+                    { label: 'Unit Price Paid', value: formatCurrency(holding.unitPrice), icon: IndianRupee },
                     { label: 'Current Value', value: formatCurrency(currentValue), icon: TrendingUp },
                     { label: 'Asset Total Value', value: formatCurrency(asset.totalValue), icon: Building2 },
                     { label: 'Annual ROI', value: `${asset.expectedAnnualROI}%`, icon: Percent },

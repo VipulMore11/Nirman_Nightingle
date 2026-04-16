@@ -27,7 +27,7 @@ import {
   Layers,
   CheckCircle,
   Clock,
-  DollarSign,
+  IndianRupee,
   Percent,
   Building2,
   Users,
@@ -159,7 +159,7 @@ type Tab = 'details' | 'financials' | 'documents' | 'market';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'details',    label: 'Details',    icon: Home },
-  { id: 'financials', label: 'Financials', icon: DollarSign },
+  { id: 'financials', label: 'Financials', icon: IndianRupee },
   { id: 'documents',  label: 'Documents',  icon: FileText },
   { id: 'market',     label: 'Market',     icon: BarChart3 },
 ];
@@ -502,7 +502,7 @@ export default function AssetDetailsPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: 'Total Asset Value', value: formatCurrency(asset.totalValue), icon: DollarSign },
+                    { label: 'Total Asset Value', value: formatCurrency(asset.totalValue), icon: IndianRupee },
                     { label: 'Price Per Unit', value: formatCurrency(asset.pricePerUnit), icon: Percent },
                     { label: 'Total Units', value: asset.totalUnits.toLocaleString(), icon: Layers },
                     { label: 'Units Available', value: asset.unitsAvailable.toLocaleString(), icon: Users },
@@ -679,7 +679,7 @@ export default function AssetDetailsPage() {
                       {
                         label: 'Current Asset Value',
                         value: formatCurrency(asset.totalValue),
-                        icon: DollarSign,
+                        icon: IndianRupee,
                         sub: 'total portfolio worth',
                         color: 'blue',
                       },

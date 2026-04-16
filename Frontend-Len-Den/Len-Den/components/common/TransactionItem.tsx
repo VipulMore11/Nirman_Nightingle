@@ -1,7 +1,7 @@
 'use client'
 
 import { formatCurrency } from '@/lib/utils/formatters'
-import { ArrowUpRight, ArrowDownLeft, DollarSign } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, IndianRupee } from 'lucide-react'
 
 interface TransactionItemProps {
   type: 'buy' | 'sell' | 'dividend' | 'withdrawal'
@@ -16,7 +16,7 @@ export function TransactionItem({ type, assetName, amount, shares, date, status 
   const iconMap = {
     buy: ArrowDownLeft,
     sell: ArrowUpRight,
-    dividend: DollarSign,
+    dividend: IndianRupee,
     withdrawal: ArrowUpRight,
   }
 

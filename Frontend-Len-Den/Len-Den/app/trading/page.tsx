@@ -42,7 +42,7 @@ export default function TradingPage() {
                           }`}
                         >
                           <p className="font-medium">{asset.name}</p>
-                          <p className="text-sm mt-1">${(asset.pricePerUnit ?? 0).toFixed(2)}</p>
+                          <p className="text-sm mt-1">₹{(asset.pricePerUnit ?? 0).toFixed(2)}</p>
                         </button>
                       ))}
                     </div>
@@ -57,7 +57,7 @@ export default function TradingPage() {
                       <div className="mt-4 flex items-baseline gap-4">
                         <div>
                           <p className="text-muted-foreground text-sm">Current Price</p>
-                          <p className="text-3xl font-bold text-foreground">${(selectedAsset.pricePerUnit ?? 0).toFixed(2)}</p>
+                          <p className="text-3xl font-bold text-foreground">₹{(selectedAsset.pricePerUnit ?? 0).toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground text-sm">Expected Annual ROI</p>

@@ -27,7 +27,7 @@ import {
   Search,
   Download,
   FileText,
-  DollarSign,
+  IndianRupee,
   Briefcase,
   History,
   Lock,
@@ -161,7 +161,7 @@ export default function ManageAssetPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Value', value: formatCurrency(asset.totalValue), icon: DollarSign, color: 'text-accent' },
+          { label: 'Total Value', value: formatCurrency(asset.totalValue), icon: IndianRupee, color: 'text-accent' },
           { label: 'Capital Raised', value: formatCurrency(asset.totalValue * 0.72), icon: TrendingUp, color: 'text-green-500' },
           { label: 'Unique Holders', value: '142', icon: Users, color: 'text-blue-500' },
           { label: 'Active Proposals', value: proposals.filter(p => p.status === 'VOTING').length.toString(), icon: MessageSquare, color: 'text-yellow-500' },
@@ -199,21 +199,56 @@ export default function ManageAssetPage() {
             </button>
           ))}
 
-          <div className="mt-8 p-6 rounded-2xl bg-muted/40 border border-border">
-            <h4 className="text-xs font-black uppercase mb-4 text-muted-foreground tracking-widest">Listing Health</h4>
+          <div className="mt-8 p-6 rounded-2xl bg-emerald-50/20 border border-emerald-100 shadow-sm group hover:border-emerald-200 transition-all">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div>
+                <h4 className="text-[10px] font-black uppercase text-emerald-900 tracking-widest">Listing Health</h4>
+                <p className="text-[10px] text-emerald-700/70 font-bold">Trending Positive</p>
+              </div>
+            </div>
+            
             <div className="space-y-4">
               <div>
-                <div className="flex justify-between text-xs mb-1 font-bold">
-                  <span>Funding Progress</span>
-                  <span className="text-accent">72%</span>
+                <div className="flex justify-between text-[10px] mb-1 font-bold">
+                  <span className="text-muted-foreground uppercase">Funding Progress</span>
+                  <span className="text-emerald-600">72%</span>
                 </div>
-                <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
-                  <div className="h-full bg-accent w-[72%]" />
+                <div className="h-1.5 w-full bg-emerald-100/50 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full w-[72%]" />
                 </div>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
+              <p className="text-[10px] text-muted-foreground leading-relaxed italic">
                 Your asset is trending well. 28% units remaining for public subscription.
               </p>
+            </div>
+          </div>
+
+          <div className="mt-4 p-6 rounded-2xl bg-indigo-50/20 border border-indigo-100 shadow-sm group hover:border-indigo-200 transition-all cursor-pointer" onClick={() => router.push(`/marketplace/manage/${assetId}/insurance`)}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center">
+                <Shield className="w-4 h-4 text-indigo-600" />
+              </div>
+              <div>
+                <h4 className="text-[10px] font-black uppercase text-indigo-900 tracking-widest">Asset Insurance</h4>
+                <p className="text-[10px] text-indigo-700/70 font-bold">Standard Risk Cover</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-[10px]">
+                <span className="text-muted-foreground">Status</span>
+                <span className="font-bold text-green-600 uppercase">Active</span>
+              </div>
+              <div className="flex justify-between items-center text-[10px]">
+                <span className="text-muted-foreground">Coverage</span>
+                <span className="font-mono text-indigo-900">₹5M+</span>
+              </div>
+              <Button variant="outline" size="sm" className="w-full h-8 text-[10px] font-black uppercase border-indigo-100 bg-white hover:bg-indigo-50 text-indigo-600 mt-2">
+                Manage Insurance
+              </Button>
             </div>
           </div>
         </div>
@@ -373,7 +408,6 @@ function SellerDiscussionView({ assetTitle, proposals, onCreateClick }: { assetT
   const [showVoters, setShowVoters] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const activeProposal = proposals.find(p => p.id === activeProposalId) || proposals[0];
 
@@ -454,13 +488,6 @@ function SellerDiscussionView({ assetTitle, proposals, onCreateClick }: { assetT
                 >
                   <Send className="w-4 h-4" />
                   Broadcast Update
-                </button>
-                <button 
-                  onClick={() => { setActiveProposalId(p.id); setShowAnalytics(true); }}
-                  className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-accent transition-colors ml-auto"
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  View Analytics
                 </button>
               </div>
             </div>
@@ -584,58 +611,6 @@ function SellerDiscussionView({ assetTitle, proposals, onCreateClick }: { assetT
         </div>
       )}
 
-      {showAnalytics && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-          <Card className="w-full max-w-2xl p-6 shadow-2xl h-[70vh] flex flex-col">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-accent" />
-                  Voting Analytics
-                </h2>
-                <p className="text-xs text-muted-foreground">ID: #PROP-00{activeProposal?.id} | {activeProposal?.status}</p>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowAnalytics(false)}><XCircle className="w-5 h-5" /></Button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-8">
-               <div className="p-4 rounded-2xl border border-border bg-card shadow-sm text-center">
-                  <p className="text-xs text-muted-foreground uppercase font-black tracking-widest mb-1">Total Participation</p>
-                  <p className="text-3xl font-black">{(activeProposal?.votesYes + activeProposal?.votesNo).toFixed(1)}%</p>
-               </div>
-               <div className="p-4 rounded-2xl border border-border bg-card shadow-sm text-center">
-                  <p className="text-xs text-muted-foreground uppercase font-black tracking-widest mb-1">Approval Rating</p>
-                  <p className="text-3xl font-black text-green-500">{((activeProposal?.votesYes / (activeProposal?.votesYes + activeProposal?.votesNo || 1)) * 100).toFixed(1)}%</p>
-               </div>
-            </div>
-
-            <div className="flex-1 bg-muted/20 rounded-2xl border border-border p-6 flex flex-col items-center justify-center relative overflow-hidden">
-               <div className="absolute top-2 right-2 text-[10px] text-muted-foreground font-mono">Live Timeline Data</div>
-               {/* Simulating a chart with CSS bars */}
-               <div className="flex items-end gap-3 w-full h-40">
-                  {[30, 45, 20, 60, 80, 55, 90, 70, 40].map((h, i) => (
-                    <div key={i} className="flex-1 bg-accent/20 hover:bg-accent transition-colors rounded-t-sm" style={{ height: `${h}%` }} />
-                  ))}
-               </div>
-               <div className="w-full h-px bg-border my-2" />
-               <div className="flex justify-between w-full text-[10px] text-muted-foreground font-black px-1 uppercase tracking-widest">
-                  <span>Day 1</span>
-                  <span>Day 3</span>
-                  <span>Day 5</span>
-                  <span>Day 7</span>
-               </div>
-            </div>
-
-            <div className="mt-8 grid grid-cols-2 gap-4">
-               <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-accent" />
-                  <span className="text-xs font-bold text-muted-foreground">Voter Participation</span>
-               </div>
-               <p className="text-xs text-muted-foreground text-right italic leading-relaxed">Voting activity peaked 2 hours after your last broadcast.</p>
-            </div>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }

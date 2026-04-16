@@ -6,7 +6,7 @@ import { formatCurrency, formatPercent } from '@/lib/utils/formatters';
 import { currentUser, mockUsers } from '@/lib/data/mockUsers';
 import { mockAssets } from '@/lib/data/mockAssets';
 import { mockTransactions } from '@/lib/data/mockTransactions';
-import { TrendingUp, ArrowUpRight, ArrowDownRight, Plus, DollarSign } from 'lucide-react';
+import { TrendingUp, ArrowUpRight, ArrowDownRight, Plus, IndianRupee } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -54,7 +54,7 @@ export default function DashboardPage() {
               <p className="text-2xl font-bold">{formatCurrency(totalPortfolioValue)}</p>
             </div>
             <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+              <IndianRupee className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </Card>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
               <p className="text-2xl font-bold">{formatCurrency(user.totalInvested)}</p>
             </div>
             <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-slate-600" />
+              <IndianRupee className="w-6 h-6 text-slate-600" />
             </div>
           </div>
         </Card>

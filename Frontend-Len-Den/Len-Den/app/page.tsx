@@ -51,7 +51,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-3 gap-8 pt-16 border-t border-border">
             <div>
-              <div className="text-3xl font-bold text-accent">$2.5B</div>
+              <div className="text-3xl font-bold text-accent">₹250Cr+</div>
               <div className="text-muted-foreground">Assets Under Management</div>
             </div>
             <div>
@@ -144,7 +144,7 @@ export default function LandingPage() {
               {
                 step: '3',
                 title: 'Invest',
-                desc: 'Buy fractional units starting from as low as $100.',
+                desc: 'Buy fractional units starting from as low as ₹1,000.',
               },
               {
                 step: '4',
