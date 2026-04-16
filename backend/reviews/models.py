@@ -1,13 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.core.exceptions import ValidationError
 
 
 class Review(models.Model):
-    """
-    Review model for assets in the marketplace.
-    Ensures one review per user per asset.
-    """
     RATING_CHOICES = [
         (1, '1 - Poor'),
         (2, '2 - Fair'),
@@ -16,9 +12,13 @@ class Review(models.Model):
         (5, '5 - Excellent'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
     asset_id = models.IntegerField()
-    rating = models.IntegerField(choices=RATING_CHOICES, validators=[])
+    rating = models.IntegerField(choices=RATING_CHOICES)
     comment = models.TextField(max_length=1000)
     helpful_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -34,25 +34,27 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        return f"Review by {self.user.username} for Asset {self.asset_id} - {self.rating}/5"
+        return f"Review by {self.user} for Asset {self.asset_id} - {self.rating}/5"
 
     def clean(self):
-        """Validate rating is between 1 and 5"""
         if not (1 <= self.rating <= 5):
             raise ValidationError({'rating': 'Rating must be between 1 and 5.'})
 
 
 class ReviewHelpful(models.Model):
-    """
-    Tracks which users found a review helpful.
-    Prevents the same user from marking a review as helpful multiple times.
-    """
-    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='helpful_users')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='helpful_users'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('review', 'user')
 
     def __str__(self):
-        return f"{self.user.username} marked Review {self.review.id} as helpful"
+        return f"{self.user} marked Review {self.review.id} as helpful"
