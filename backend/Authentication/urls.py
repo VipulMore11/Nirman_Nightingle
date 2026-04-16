@@ -21,6 +21,9 @@ urlpatterns = [
     path('opt_in/', blockchain_views.opt_in, name='opt_in'),
     path('buy_asset/', blockchain_views.buy_asset, name='buy_asset'),
 
-    path('/marketplace/buy/', views.buy_asset, name='buy_asset'),
-    path('/marketplace/confirm-buy/', views.confirm_buy, name='confirm_buy'),
+    path('marketplace/buy/', views.buy_asset, name='buy_asset'),
+    path('marketplace/confirm-buy/', views.confirm_buy, name='confirm_buy'),
+    path('marketplace/sell/', views.sell_asset, name='sell_asset'),
+    path('marketplace/confirm-sell/', views.confirm_sell, name='confirm_sell'),
+    path('marketplace/transactions/', views.transaction_history, name='transaction_history'),
 ]

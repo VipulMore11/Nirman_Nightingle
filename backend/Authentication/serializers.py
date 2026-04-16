@@ -318,3 +318,71 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         )
         
         return transaction
+
+
+class SellTransactionCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating new transactions (sell flow)"""
+    
+    class Meta:
+        model = Transaction
+        fields = ['listing', 'quantity']
+
+    def validate(self, data):
+        """Validate sell transaction data"""
+        listing = data['listing']
+        quantity = data['quantity']
+        seller = self.context['request'].user
+        
+        # Validate quantity
+        if quantity <= 0:
+            raise serializers.ValidationError("Quantity must be greater than 0")
+        
+        if quantity > listing.quantity_available:
+            raise serializers.ValidationError(
+                f"Insufficient available quantity. Only {listing.quantity_available} available."
+            )
+        
+        if not listing.is_active:
+            raise serializers.ValidationError("This listing is no longer active.")
+        
+        # For sell, the seller must be the listing creator
+        if listing.seller != seller:
+            raise serializers.ValidationError("You can only sell from your own listings.")
+        
+        # Verify seller has sufficient holdings
+        try:
+            holding = WalletHolding.objects.get(asset=listing.asset, user=seller)
+            if holding.quantity < quantity:
+                raise serializers.ValidationError(
+                    f"Insufficient holdings. You have {holding.quantity} units but trying to sell {quantity}."
+                )
+        except WalletHolding.DoesNotExist:
+            raise serializers.ValidationError("You do not hold this asset.")
+        
+        return data
+
+    def create(self, validated_data):
+        listing = validated_data['listing']
+        quantity = validated_data['quantity']
+        seller = self.context['request'].user
+        buyer_id = self.context.get('buyer_id')  # Should be provided in context
+        
+        if not buyer_id:
+            raise serializers.ValidationError("Buyer ID is required for sell transactions.")
+        
+        from django.shortcuts import get_object_or_404
+        buyer = get_object_or_404(User, id=buyer_id)
+        
+        # Create transaction
+        transaction = Transaction.objects.create(
+            buyer=buyer,
+            seller=seller,
+            asset=listing.asset,
+            listing=listing,
+            quantity=quantity,
+            unit_price=listing.price_per_unit,
+            total_amount=quantity * listing.price_per_unit,
+            status='pending'
+        )
+        
+        return transaction
