@@ -112,10 +112,109 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = ['first_name','last_name', 'email', 'phone_no', 'profile_pic', 'age','sex', 'dob', ]
 
 class KYCSerializer(serializers.ModelSerializer):
+    # File upload fields (input only, not stored in database)
+    aadhaar_file = serializers.FileField(write_only=True, required=False, allow_null=True)
+    pan_file = serializers.FileField(write_only=True, required=False, allow_null=True)
+    passport_file = serializers.FileField(write_only=True, required=False, allow_null=True)
+    selfie_file = serializers.FileField(write_only=True, required=False, allow_null=True)
+    
     class Meta:
         model = KYC
-        fields = '__all__'
-        read_only_fields = ['status', 'verified_by', 'verified_at']
+        fields = [
+            'id', 'user', 'aadhaar_number', 'aadhaar_card_url',
+            'pan_number', 'pan_card_url', 'passport_number', 'passport_url',
+            'address_line', 'city', 'state', 'pincode', 'selfie_url',
+            'status', 'verified_by', 'verified_at', 'documents_submitted_at', 'created_at',
+            'aadhaar_file', 'pan_file', 'passport_file', 'selfie_file'
+        ]
+        read_only_fields = ['status', 'verified_by', 'verified_at', 'created_at', 'documents_submitted_at']
+    
+    def validate(self, data):
+        """
+        Validate that at least one identity document and a selfie are provided.
+        """
+        # Check file inputs
+        has_aadhaar_file = data.get('aadhaar_file') is not None
+        has_pan_file = data.get('pan_file') is not None
+        has_passport_file = data.get('passport_file') is not None
+        has_selfie_file = data.get('selfie_file') is not None
+        
+        # Check if files are being uploaded
+        files_being_uploaded = any([has_aadhaar_file, has_pan_file, has_passport_file, has_selfie_file])
+        
+        if files_being_uploaded:
+            # If uploading files, require at least one ID and a selfie
+            has_id_document = has_aadhaar_file or has_pan_file or has_passport_file
+            if not has_id_document or not has_selfie_file:
+                raise ValidationError(
+                    "At least one identity document (Aadhaar, PAN, or Passport) and a selfie are required."
+                )
+        
+        return data
+    
+    def create(self, validated_data):
+        """
+        Create a new KYC record with file uploads.
+        """
+        from .services.cloudinary_service import upload_kyc_documents
+        from django.utils import timezone
+        
+        # Extract file objects from validated data
+        aadhaar_file = validated_data.pop('aadhaar_file', None)
+        pan_file = validated_data.pop('pan_file', None)
+        passport_file = validated_data.pop('passport_file', None)
+        selfie_file = validated_data.pop('selfie_file', None)
+        
+        # Upload files to Cloudinary if provided
+        if any([aadhaar_file, pan_file, passport_file, selfie_file]):
+            try:
+                uploaded_urls = upload_kyc_documents(
+                    kyc_obj=None,  # Not used in the function
+                    aadhaar_file=aadhaar_file,
+                    pan_file=pan_file,
+                    passport_file=passport_file,
+                    selfie_file=selfie_file
+                )
+                # Update validated_data with the Cloudinary URLs
+                validated_data.update(uploaded_urls)
+                validated_data['documents_submitted_at'] = timezone.now()
+            except Exception as e:
+                raise ValidationError(f"Document upload failed: {str(e)}")
+        
+        # Create the KYC record
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        """
+        Update a KYC record with file uploads.
+        """
+        from .services.cloudinary_service import upload_kyc_documents
+        from django.utils import timezone
+        
+        # Extract file objects from validated data
+        aadhaar_file = validated_data.pop('aadhaar_file', None)
+        pan_file = validated_data.pop('pan_file', None)
+        passport_file = validated_data.pop('passport_file', None)
+        selfie_file = validated_data.pop('selfie_file', None)
+        
+        # Upload files to Cloudinary if provided
+        if any([aadhaar_file, pan_file, passport_file, selfie_file]):
+            try:
+                uploaded_urls = upload_kyc_documents(
+                    kyc_obj=instance,
+                    aadhaar_file=aadhaar_file,
+                    pan_file=pan_file,
+                    passport_file=passport_file,
+                    selfie_file=selfie_file
+                )
+                # Update validated_data with the Cloudinary URLs
+                validated_data.update(uploaded_urls)
+                validated_data['documents_submitted_at'] = timezone.now()
+            except Exception as e:
+                raise ValidationError(f"Document upload failed: {str(e)}")
+        
+        # Update the KYC record
+        return super().update(instance, validated_data)
 
 
 # ===== Tokenized Asset Marketplace Serializers =====
@@ -309,6 +408,74 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         transaction = Transaction.objects.create(
             buyer=self.context['request'].user,
             seller=listing.seller,
+            asset=listing.asset,
+            listing=listing,
+            quantity=quantity,
+            unit_price=listing.price_per_unit,
+            total_amount=quantity * listing.price_per_unit,
+            status='pending'
+        )
+        
+        return transaction
+
+
+class SellTransactionCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating new transactions (sell flow)"""
+    
+    class Meta:
+        model = Transaction
+        fields = ['listing', 'quantity']
+
+    def validate(self, data):
+        """Validate sell transaction data"""
+        listing = data['listing']
+        quantity = data['quantity']
+        seller = self.context['request'].user
+        
+        # Validate quantity
+        if quantity <= 0:
+            raise serializers.ValidationError("Quantity must be greater than 0")
+        
+        if quantity > listing.quantity_available:
+            raise serializers.ValidationError(
+                f"Insufficient available quantity. Only {listing.quantity_available} available."
+            )
+        
+        if not listing.is_active:
+            raise serializers.ValidationError("This listing is no longer active.")
+        
+        # For sell, the seller must be the listing creator
+        if listing.seller != seller:
+            raise serializers.ValidationError("You can only sell from your own listings.")
+        
+        # Verify seller has sufficient holdings
+        try:
+            holding = WalletHolding.objects.get(asset=listing.asset, user=seller)
+            if holding.quantity < quantity:
+                raise serializers.ValidationError(
+                    f"Insufficient holdings. You have {holding.quantity} units but trying to sell {quantity}."
+                )
+        except WalletHolding.DoesNotExist:
+            raise serializers.ValidationError("You do not hold this asset.")
+        
+        return data
+
+    def create(self, validated_data):
+        listing = validated_data['listing']
+        quantity = validated_data['quantity']
+        seller = self.context['request'].user
+        buyer_id = self.context.get('buyer_id')  # Should be provided in context
+        
+        if not buyer_id:
+            raise serializers.ValidationError("Buyer ID is required for sell transactions.")
+        
+        from django.shortcuts import get_object_or_404
+        buyer = get_object_or_404(User, id=buyer_id)
+        
+        # Create transaction
+        transaction = Transaction.objects.create(
+            buyer=buyer,
+            seller=seller,
             asset=listing.asset,
             listing=listing,
             quantity=quantity,

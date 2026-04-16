@@ -153,6 +153,23 @@ REST_FRAMEWORK = {
     ],
 }
 
+# Cloudinary Configuration
+import cloudinary
+import os
+
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME', 'your_cloud_name'),
+    api_key=os.getenv('CLOUDINARY_API_KEY', 'your_api_key'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET', 'your_api_secret')
+)
+
+# KYC File Upload Settings
+KYC_FILE_UPLOAD_SETTINGS = {
+    'max_file_size': 5 * 1024 * 1024,  # 5MB
+    'allowed_formats': ['jpg', 'jpeg', 'png'],
+    'folder_prefix': 'kyc',
+}
+
 # JWT Configuration
 from datetime import timedelta
 

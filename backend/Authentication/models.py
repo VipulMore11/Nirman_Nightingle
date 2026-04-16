@@ -57,6 +57,9 @@ class KYC(models.Model):
     pan_number = models.CharField(max_length=10, blank=True, null=True)
     pan_card_url = models.TextField(blank=True, null=True)
 
+    passport_number = models.CharField(max_length=20, blank=True, null=True)
+    passport_url = models.TextField(blank=True, null=True)
+
     # Address Proof
     address_line = models.TextField(blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
@@ -64,6 +67,9 @@ class KYC(models.Model):
     pincode = models.CharField(max_length=10, blank=True, null=True)
 
     selfie_url = models.TextField(blank=True, null=True)
+
+    # Document submission tracking
+    documents_submitted_at = models.DateTimeField(null=True, blank=True)
 
     # Verification status
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
