@@ -23,6 +23,13 @@ class User(AbstractUser):
     age = models.IntegerField(null=True, blank=True)
     sex = models.CharField(max_length=10, blank=True, null=True)
     dob = models.CharField(max_length=11, blank=True, null=True)
+    wallet_address = models.CharField(
+        max_length=42,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Ethereum wallet address (42 chars including 0x)"
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

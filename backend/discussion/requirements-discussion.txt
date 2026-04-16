@@ -1,0 +1,46 @@
+# Requirements for Discussion App and Blockchain Integration
+# Add these to your main requirements.txt
+
+# Web3 & Blockchain
+web3>=6.0.0
+eth-account>=0.9.4
+eth-typing>=3.0.0
+hexbytes>=0.3.0
+
+# Celery & Async Tasks
+celery>=5.3.0
+redis>=5.0.0
+kombu>=5.3.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Additional utilities
+requests>=2.31.0
+validators>=0.28.0
+
+# Already in main requirements.txt (ensure versions match)
+Django>=4.0.0
+djangorestframework>=3.14.0
+djangorestframework-simplejwt>=5.2.2
+django-cors-headers>=3.14.0
+
+# Optional: Database
+psycopg2-binary>=2.9.0  # For PostgreSQL (production)
+
+# Optional: Monitoring & Logging
+python-json-logger>=2.0.0
+sentry-sdk>=1.35.0
+
+# Optional: Rate Limiting
+django-ratelimit>=4.1.0
+
+# Optional: Email
+django-anymail>=10.0
+
+# Optional: Testing & Code Quality
+pytest>=7.0.0
+pytest-django>=4.5.0
+coverage>=7.0.0
+black>=23.0.0
+flake8>=6.0.0
