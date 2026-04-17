@@ -1,38 +1,53 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { currentUser } from '@/lib/data/mockUsers';
-import { mockAssets } from '@/lib/data/mockAssets';
-import { mockTransactions } from '@/lib/data/mockTransactions';
-import { formatCurrency, formatDate, formatPercent } from '@/lib/utils/formatters';
+import { getAssets, GetAssetsResponse } from '@/lib/services/blockchainService';
+import { formatCurrency } from '@/lib/utils/formatters';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { TrendingUp, Download, ExternalLink } from 'lucide-react';
+import { Download, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default function PortfolioPage() {
-  const user = currentUser;
+  const [assets, setAssets] = useState<GetAssetsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAssets = async () => {
+      try {
+        const data = await getAssets(1, 50);
+        setAssets(data);
+      } catch (error) {
+        console.error('Failed to fetch assets:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssets();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  const availableAssets = assets?.assets || [];
   
-  const userAssets = user.portfolio
-    .map((holding) => {
-      const asset = mockAssets.find((a) => a.id === holding.assetId);
-      const currentValue = holding.unitsOwned * holding.unitPrice;
-      return { asset, holding, currentValue };
-    })
-    .filter((a) => a.asset);
-
-  const totalValue = userAssets.reduce((sum, a) => sum + a.currentValue, 0);
-
-  // Pie chart data
-  const pieData = userAssets.map((item) => ({
-    name: item.asset?.name || 'Unknown',
-    value: (item.currentValue / totalValue) * 100,
-    fullValue: item.currentValue,
+  // Pie chart data based on available supply
+  const pieData = availableAssets.slice(0, 6).map((asset) => ({
+    name: asset.title,
+    value: (asset.available_supply / availableAssets.reduce((sum, a) => sum + a.available_supply, 0)) * 100,
+    fullValue: asset.available_supply * asset.unit_price,
   }));
 
   const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
-  // Performance chart data (simulated)
+  // Performance chart data (simulated for demo)
   const performanceData = [
     { date: 'Jan', portfolio: 2300000 },
     { date: 'Feb', portfolio: 2450000 },
@@ -42,11 +57,14 @@ export default function PortfolioPage() {
     { date: 'Jun', portfolio: 2750000 },
   ];
 
-  const userDividends = mockTransactions.filter(
-    (t) => t.userId === user.id && t.type === 'dividend'
-  );
+  // Mock recent transactions for demo
+  const recentTransactions = [
+    { id: 1, asset: 'Mumbai Tech Park', type: 'purchase', amount: 50000, date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+    { id: 2, asset: 'Alpine Gold Fund', type: 'purchase', amount: 25000, date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+    { id: 3, asset: 'Modern Art Collection', type: 'dividend', amount: 1250, date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+  ];
 
-  const totalDividends = userDividends.reduce((sum, t) => sum + t.totalAmount, 0);
+  const totalPortfolioValue = pieData.reduce((sum, item) => sum + item.fullValue, 0) || 0;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8">
@@ -64,23 +82,21 @@ export default function PortfolioPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-6 border-border bg-card">
-          <p className="text-muted-foreground text-sm mb-2">Total Value</p>
-          <p className="text-2xl font-bold">{formatCurrency(totalValue)}</p>
+          <p className="text-muted-foreground text-sm mb-2">Total Market Value</p>
+          <p className="text-2xl font-bold">{formatCurrency(totalPortfolioValue)}</p>
         </Card>
         <Card className="p-6 border-border bg-card">
-          <p className="text-muted-foreground text-sm mb-2">Invested Amount</p>
-          <p className="text-2xl font-bold">{formatCurrency(user.totalInvested)}</p>
+          <p className="text-muted-foreground text-sm mb-2">Available Assets</p>
+          <p className="text-2xl font-bold">{availableAssets.length}</p>
         </Card>
         <Card className="p-6 border-border bg-card">
-          <p className="text-muted-foreground text-sm mb-2">Unrealized Gain</p>
-          <p className="text-2xl font-bold text-green-500">
-            {formatCurrency(totalValue - user.totalInvested)}
-          </p>
+          <p className="text-muted-foreground text-sm mb-2">Total Supply</p>
+          <p className="text-2xl font-bold">{availableAssets.reduce((sum, a) => sum + a.total_supply, 0).toLocaleString()}</p>
         </Card>
         <Card className="p-6 border-border bg-card">
-          <p className="text-muted-foreground text-sm mb-2">Total Dividends</p>
+          <p className="text-muted-foreground text-sm mb-2">Verified Assets</p>
           <p className="text-2xl font-bold text-accent">
-            {formatCurrency(totalDividends)}
+            {availableAssets.filter(a => a.is_verified).length}
           </p>
         </Card>
       </div>
@@ -103,8 +119,8 @@ export default function PortfolioPage() {
                   paddingAngle={2}
                   dataKey="value"
                 >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                  {pieData.map((entry) => (
+                    <Cell key={entry.name} fill={colors[pieData.indexOf(entry) % colors.length]} />
                   ))}
                 </Pie>
               </PieChart>
@@ -136,30 +152,32 @@ export default function PortfolioPage() {
               <thead className="border-b border-border">
                 <tr>
                   <th className="text-left p-4 font-medium text-muted-foreground">Asset</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">Units</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">Value</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">% of Portfolio</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Unit Price</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Total Supply</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Available</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {userAssets.map(({ asset, holding, currentValue }) => (
+                {availableAssets.slice(0, 10).map((asset) => (
                   <tr
-                    key={holding.assetId}
+                    key={asset.id}
                     className="border-b border-border hover:bg-accent/5 cursor-pointer transition-colors group"
                   >
                     <td className="p-4">
                       <Link
-                        href={`/portfolio/holdings/${holding.assetId}`}
+                        href={`/marketplace/listings/${asset.id}`}
                         className="flex items-center gap-2 font-medium hover:text-accent transition-colors"
                       >
-                        {asset?.name}
+                        {asset.title}
                         <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-70 transition-opacity" />
                       </Link>
                     </td>
-                    <td className="text-right p-4">{holding.unitsOwned.toLocaleString()}</td>
-                    <td className="text-right p-4 font-medium">{formatCurrency(currentValue)}</td>
+                    <td className="text-right p-4">{formatCurrency(asset.unit_price)}</td>
+                    <td className="text-right p-4">{asset.total_supply.toLocaleString()}</td>
+                    <td className="text-right p-4 font-medium">{asset.available_supply.toLocaleString()}</td>
                     <td className="text-right p-4 text-muted-foreground">
-                      {formatPercent((currentValue / totalValue) * 100)}
+                      {asset.is_verified ? '✓ Verified' : 'Pending'}
                     </td>
                   </tr>
                 ))}
@@ -203,10 +221,10 @@ export default function PortfolioPage() {
         </div>
       </Card>
 
-      {/* Dividend History */}
+      {/* Recent Transactions */}
       <Card className="border-border bg-card">
         <div className="p-6 border-b border-border">
-          <h2 className="text-lg font-semibold">Dividend History</h2>
+          <h2 className="text-lg font-semibold">Recent Transactions</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -214,28 +232,31 @@ export default function PortfolioPage() {
               <tr>
                 <th className="text-left p-4 font-medium text-muted-foreground">Asset</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Date</th>
+                <th className="text-left p-4 font-medium text-muted-foreground">Type</th>
                 <th className="text-right p-4 font-medium text-muted-foreground">Amount</th>
-                <th className="text-right p-4 font-medium text-muted-foreground">Units</th>
               </tr>
             </thead>
             <tbody>
-              {userDividends.map((dividend) => {
-                const asset = mockAssets.find((a) => a.id === dividend.assetId);
-                return (
-                  <tr key={dividend.id} className="border-b border-border hover:bg-card/50">
-                    <td className="p-4">{asset?.name}</td>
-                    <td className="p-4 text-muted-foreground">
-                      {formatDate(dividend.date)}
-                    </td>
-                    <td className="text-right p-4 font-medium text-green-500">
-                      +{formatCurrency(dividend.totalAmount)}
-                    </td>
-                    <td className="text-right p-4 text-muted-foreground">
-                      {dividend.units.toLocaleString()}
-                    </td>
-                  </tr>
-                );
-              })}
+              {recentTransactions.map((transaction) => (
+                <tr key={transaction.id} className="border-b border-border hover:bg-card/50">
+                  <td className="p-4">{transaction.asset}</td>
+                  <td className="p-4 text-muted-foreground">
+                    {transaction.date.toLocaleDateString()}
+                  </td>
+                  <td className="p-4">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      transaction.type === 'dividend' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {transaction.type === 'dividend' ? 'Dividend' : 'Purchase'}
+                    </span>
+                  </td>
+                  <td className="text-right p-4 font-medium text-green-500">
+                    +{formatCurrency(transaction.amount)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

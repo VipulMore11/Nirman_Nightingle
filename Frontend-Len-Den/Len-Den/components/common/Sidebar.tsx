@@ -36,6 +36,12 @@ const navItems = [
     regex: /^\/marketplace/,
   },
   {
+    href: '/dashboard/my-assets',
+    label: 'My Assets',
+    icon: Package,
+    regex: /^\/dashboard\/my-assets/,
+  },
+  {
     href: '/trading',
     label: 'Trade',
     icon: TrendingUp,
@@ -60,7 +66,7 @@ const navItems = [
     regex: /^\/transactions/,
   },
   {
-    href: '/admin/dashboard',
+    href: '/admin/assets',
     label: 'Admin',
     icon: BarChart3,
     regex: /^\/admin/,

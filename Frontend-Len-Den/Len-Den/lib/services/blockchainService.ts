@@ -82,6 +82,30 @@ export const getAssets = async (page = 1, perPage = 12, search = ''): Promise<Ge
 };
 
 /**
+ * Get a single asset by ID
+ */
+export const getAssetById = async (assetId: string | number): Promise<Asset> => {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.MARKETPLACE}/assets/${assetId}/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch asset');
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch asset');
+  }
+};
+
+/**
  * Get opt-in transaction for an asset
  */
 export const getOptInTransaction = async (

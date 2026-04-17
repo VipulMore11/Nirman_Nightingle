@@ -5,14 +5,11 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatCurrency } from '@/lib/utils/formatters';
-import { Search, TrendingUp, Shield, Loader2, AlertCircle } from 'lucide-react';
-import { getAssets, Asset } from '@/lib/services/blockchainService';
-import { mockAssets } from '@/lib/data/mockAssets';
 import { formatCurrency, formatPercent } from '@/lib/utils/formatters';
-import { Search, Filter, TrendingUp, Shield, Plus, Users, MessageSquare, LayoutGrid } from 'lucide-react';
+import { Search, TrendingUp, Shield, Loader2, AlertCircle, Plus, Users, LayoutGrid } from 'lucide-react';
+import { getAssets, Asset } from '@/lib/services/blockchainService';
 
-export default function MarketplaceListingsPage() {
+export default function MarketplacePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
@@ -49,11 +46,18 @@ export default function MarketplaceListingsPage() {
     fetchAssets();
   }, [searchTerm]);
 
-  let filtered = (viewType === 'browse' ? mockAssets : myAssets).filter((asset) => {
-    const matchesSearch = asset.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || asset.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+  let filtered: Asset[] = [];
+
+if (viewType === 'browse') {
+  // Filter API assets by search term
+  filtered = assets.filter((asset) => {
+    const matchesSearch = (asset.title || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
+} else {
+  // TODO: Fetch user's own assets from API endpoint
+  filtered = [];
+}
 
   if (sortBy === 'roi') {
     // Sorting by ROI would go here if available in asset data
@@ -154,111 +158,10 @@ export default function MarketplaceListingsPage() {
         ))}
       </div>
 
-      {/* Assets Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((asset) => {
-          const isSeller = viewType === 'my-assets';
-          const href = isSeller ? `/marketplace/manage/${asset.id}` : `/marketplace/listings/${asset.id}`;
-          
-          return (
-            <Link key={asset.id} href={href}>
-              <Card className={`h-full border-border bg-card hover:border-accent transition-all cursor-pointer overflow-hidden group relative ${isSeller ? 'border-accent/40 bg-accent/5' : ''}`}>
-                {isSeller && (
-                  <div className="absolute top-3 right-3 z-20">
-                    <span className="px-2 py-1 rounded bg-accent text-accent-foreground text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                      My Asset
-                    </span>
-                  </div>
-                )}
-                {/* Image Placeholder */}
-                <div className="h-40 bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center relative overflow-hidden">
-                  <div className="text-center z-10">
-                    <div className="text-4xl font-bold text-slate-400 opacity-50">
-                      {asset.category === 'real-estate' && '🏢'}
-                      {asset.category === 'gold' && '💰'}
-                      {asset.category === 'art' && '🎨'}
-                      {asset.category === 'startup' && '🚀'}
-                      {asset.category === 'commodities' && '⚡'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 space-y-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                      {asset.category}
-                    </p>
-                    <h3 className="font-semibold text-lg mb-1 group-hover:text-accent transition-colors">
-                      {asset.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">{asset.location}</p>
-                  </div>
-
-                  <div className="space-y-2 py-3 border-t border-b border-border">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Price per unit</span>
-                      <span className="font-medium">{formatCurrency(asset.pricePerUnit)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Units available</span>
-                      <span className="font-medium">{asset.unitsAvailable.toLocaleString()}</span>
-                    </div>
-                    {isSeller && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total Value</span>
-                        <span className="font-medium text-accent">{formatCurrency(asset.totalValue)}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4 text-green-500" />
-                      <div>
-                        <p className="text-muted-foreground text-xs">ROI</p>
-                        <p className="font-semibold text-green-500">
-                          {formatPercent(asset.expectedAnnualROI)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Shield className="w-4 h-4 text-blue-500" />
-                      <div>
-                        <p className="text-muted-foreground text-xs">Risk</p>
-                        <p className="font-semibold text-blue-500">{asset.riskScore}/10</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button className={`w-full text-sm gap-2 ${isSeller ? 'bg-foreground text-background hover:bg-foreground/90' : 'bg-accent hover:bg-accent/90'}`}>
-                    {isSeller ? (
-                      <>
-                        <Filter className="w-4 h-4" />
-                        Manage Asset
-                      </>
-                    ) : (
-                      'View Details'
-                    )}
-                  </Button>
-                </div>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">No assets found matching your criteria</p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchTerm('');
-              setSelectedCategory('all');
-            }}
-          >
-            Clear filters
-          </Button>
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
         </div>
       )}
 
@@ -266,86 +169,107 @@ export default function MarketplaceListingsPage() {
       {!loading && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((asset) => (
-              <Link key={asset.id} href={`/marketplace/listings/${asset.id}`}>
-                <Card className="h-full border-border bg-card hover:border-accent transition-colors overflow-hidden group cursor-pointer">
-                {/* Image Placeholder */}
-                <div className="h-40 bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center relative overflow-hidden">
-                  <div className="text-center z-10">
-                    <div className="text-4xl font-bold text-slate-400 opacity-50">
-                      📊
+            {filtered.length > 0 ? (
+              filtered.map((asset) => (
+                <Link key={asset.id} href={`/marketplace/listings/${asset.id}`}>
+                  <Card className="h-full border-border bg-card hover:border-accent transition-all cursor-pointer overflow-hidden group">
+                    {/* Image */}
+                    <div className="h-40 bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center relative overflow-hidden">
+                      {asset.thumbnail_url ? (
+                        <img src={asset.thumbnail_url} alt={asset.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <div className="text-4xl text-slate-400 opacity-50">📊</div>
+                      )}
                     </div>
-                  </div>
-                </div>
 
-                <div className="p-4 space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1 group-hover:text-accent transition-colors">
-                      {asset.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {asset.description}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2 py-3 border-t border-b border-border">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Price per unit</span>
-                      <span className="font-medium">{formatCurrency(asset.unit_price)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Units available</span>
-                      <span className="font-medium">{Math.floor(asset.available_supply).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Min investment</span>
-                      <span className="font-medium">
-                        {formatCurrency(asset.unit_price)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Shield className="w-4 h-4 text-blue-500" />
+                    <div className="p-4 space-y-4">
                       <div>
-                        <p className="text-muted-foreground text-xs">Verified</p>
-                        <p className="font-semibold text-blue-500">✓</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                          Fractionalized Asset
+                        </p>
+                        <h3 className="font-semibold text-lg mb-1 group-hover:text-accent transition-colors line-clamp-2">
+                          {asset.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(asset.created_at).toLocaleDateString()}
+                        </p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4 text-green-500" />
-                      <div>
-                        <p className="text-muted-foreground text-xs">Status</p>
-                        <p className="font-semibold text-green-500 text-xs">Active</p>
-                      </div>
-                    </div>
-                  </div>
 
-                  <Button className="w-full bg-accent hover:bg-accent/90 text-sm">
-                    View Details
-                  </Button>
-                </div>
-              </Card>
-              </Link>
-            ))}
+                      <div className="space-y-2 py-3 border-t border-b border-border">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Price per unit</span>
+                          <span className="font-medium">{formatCurrency(asset.unit_price)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Total supply</span>
+                          <span className="font-medium">{asset.total_supply.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Available</span>
+                          <span className="font-medium text-accent">{asset.available_supply.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="w-4 h-4 text-green-500" />
+                          <div>
+                            <p className="text-muted-foreground text-xs">Status</p>
+                            <p className="font-semibold text-green-500">{asset.is_verified ? '✓ Verified' : 'Pending'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Shield className="w-4 h-4 text-blue-500" />
+                          <div>
+                            <p className="text-muted-foreground text-xs">Type</p>
+                            <p className="font-semibold text-blue-500">Asset</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button className="w-full text-sm bg-accent hover:bg-accent/90">
+                        View Details
+                      </Button>
+                    </div>
+                  </Card>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground mb-4">No assets found matching your criteria</p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('all');
+                  }}
+                >
+                  Clear filters
+                </Button>
+              </div>
+            )}
           </div>
 
-          {filtered.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No assets found matching your criteria</p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedCategory('all');
-                }}
-              >
-                Clear filters
-              </Button>
+          {/* No results message */}
+          {filtered.length === 0 && assets.length > 0 && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No assets match your search. Try adjusting your filters.</p>
             </div>
           )}
         </>
+      )}
+
+      {/* Empty state when no assets available */}
+      {!loading && assets.length === 0 && !error && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground mb-4">No assets available at this time</p>
+          <Link href="/marketplace/list-asset">
+            <Button className="gap-2 bg-accent hover:bg-accent/90">
+              <Plus className="w-4 h-4" />
+              Be the first to list an asset
+            </Button>
+          </Link>
+        </div>
       )}
     </div>
   );

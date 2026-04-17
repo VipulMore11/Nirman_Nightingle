@@ -21,6 +21,14 @@ export const API_ENDPOINTS = {
   
   // Marketplace & Blockchain
   MARKETPLACE: `${API_BASE_URL}/auth/marketplace`,
+  CREATE_ASSET: `${API_BASE_URL}/auth/create_asset_with_documents/`,
+  PENDING_ASSETS: `${API_BASE_URL}/auth/admin/assets/pending/`,
+  APPROVE_ASSET: (assetId: string | number) => `${API_BASE_URL}/auth/admin/assets/${assetId}/approve/`,
+  REJECT_ASSET: (assetId: string | number) => `${API_BASE_URL}/auth/admin/assets/${assetId}/reject/`,
+  RESUBMIT_ASSET: (assetId: string | number) => `${API_BASE_URL}/auth/admin/assets/${assetId}/resubmit/`,
+  GET_PENDING_SIGNATURE: (assetId: string | number) => `${API_BASE_URL}/auth/get_pending_signature/${assetId}/`,
+  SUBMIT_ASA_TRANSACTION: `${API_BASE_URL}/auth/submit_asa_transaction/`,
+  GET_MY_ASSETS: `${API_BASE_URL}/auth/marketplace/my-assets/`,
   GET_ASSETS: `${API_BASE_URL}/auth/marketplace/assets/`,
   OPT_IN: `${API_BASE_URL}/auth/opt_in/`,
   BUY_ASSET: `${API_BASE_URL}/auth/buy_asset/`,

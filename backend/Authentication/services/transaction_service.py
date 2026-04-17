@@ -104,7 +104,9 @@ def create_asa_on_blockchain(asset):
         if not asset.total_supply:
             raise ValueError("Asset total_supply is required")
         
-        # Create ASA transaction
+        print(f"[DEBUG] ========== create_asa_on_blockchain START ==========")
+        
+        # Create ASA transaction (unsigned)
         asa_txn = create_asa_txn(
             creator_address=asset.creator_wallet,
             asset_name=asset.title,
@@ -112,14 +114,20 @@ def create_asa_on_blockchain(asset):
             total=int(asset.total_supply)
         )
         
-        # Encode transaction to bytes
-        txn_bytes = encoding.msgpack_encode(asa_txn)
+        print(f"[DEBUG] ASA transaction created successfully")
+        print(f"[DEBUG] Transaction type: {type(asa_txn)}")
         
-        # Convert to base64 for safe transmission
-        if isinstance(txn_bytes, str):
-            txn_bytes = txn_bytes.encode('utf-8')
+        # ✅ Use encoding to properly serialize the transaction
+        from algosdk import encoding
         
-        txn_base64 = base64.b64encode(txn_bytes).decode('utf-8')
+        # encoding.msgpack_encode() returns Base64-encoded transaction string
+        txn_base64 = encoding.msgpack_encode(asa_txn)
+        
+        print(f"[DEBUG] ✅ Got transaction using encoding.msgpack_encode()")
+        print(f"[DEBUG] txn_base64 type: {type(txn_base64)}")
+        print(f"[DEBUG] txn_base64 length: {len(txn_base64)}")
+        print(f"[DEBUG] txn_base64 first 50 chars: {txn_base64[:50]}")
+        print(f"[DEBUG] ========== create_asa_on_blockchain END ==========")
         
         return {
             'txn_bytes': txn_base64,
@@ -135,104 +143,113 @@ def create_asa_on_blockchain(asset):
         raise ValueError(f"Failed to create ASA transaction: {str(e)}")
 
 
-def submit_asa_to_blockchain(signed_txn_base64):
+# services/transaction_service.py
+
+def submit_asa_to_blockchain(signed_txn_base64: str) -> int:
     """
-    Submit signed ASA creation transaction to Algorand testnet.
-    Waits for confirmation and returns the real ASA ID.
+    Submit signed ASA creation transaction to testnet using the Algorand SDK.
+    Returns the ASA ID.
+    """
+    import base64
+    import time
+    from algosdk.error import AlgodHTTPError
+
+    print(f"[DEBUG] ========== submit_asa_to_blockchain START ==========")
     
-    Args:
-        signed_txn_base64: Base64-encoded signed transaction from Pera wallet
-        
-    Returns:
-        int: Real ASA ID from blockchain
-        
-    Raises:
-        ValueError: If submission fails or times out
-    """
+    # Decode base64 with comprehensive error handling
+    print(f"[DEBUG] Received signed_txn_base64 type: {type(signed_txn_base64)}")
+    print(f"[DEBUG] Received signed_txn_base64 length: {len(signed_txn_base64)}")
+    print(f"[DEBUG] First 50 chars: {repr(str(signed_txn_base64)[:50])}")
+    print(f"[DEBUG] Last 20 chars: {repr(str(signed_txn_base64)[-20:])}")
+    
     try:
-        import base64
-        import time
+        # Convert to string and strip whitespace
+        b64_str = str(signed_txn_base64).strip()
         
-        # Decode signed transaction from base64
-        # The Pera wallet returns msgpack-encoded bytes in base64 format
-        print(f"[DEBUG] Received signed_txn_base64 type: {type(signed_txn_base64)}")
-        print(f"[DEBUG] signed_txn_base64 length: {len(str(signed_txn_base64))}")
+        # Remove ALL whitespace characters (spaces, newlines, tabs, etc.)
+        b64_str = ''.join(b64_str.split())
+        print(f"[DEBUG] After whitespace removal: {len(b64_str)} chars")
         
-        # Handle both string and bytes input
-        if isinstance(signed_txn_base64, str):
-            # Add padding if necessary
-            padding = len(signed_txn_base64) % 4
-            if padding:
-                signed_txn_base64 = signed_txn_base64 + ('=' * (4 - padding))
+        # Try decoding with current length
+        try:
+            signed_txn_bytes = base64.b64decode(b64_str, validate=False)
+            print(f"[DEBUG] ✅ Decoded successfully (no padding needed)")
+        except (ValueError, TypeError) as first_attempt_err:
+            print(f"[DEBUG] First decode attempt failed: {str(first_attempt_err)}")
             
-            print(f"[DEBUG] Base64 string (first 50 chars): {signed_txn_base64[:50]}")
-            
-            try:
-                signed_txn_bytes = base64.b64decode(signed_txn_base64)
-            except Exception as decode_err:
-                print(f"[ERROR] Base64 decode failed: {str(decode_err)}")
-                raise ValueError(f"Invalid base64 encoding: {str(decode_err)}")
-        else:
-            # If already bytes, use as-is
-            signed_txn_bytes = signed_txn_base64
+            # Add padding and try again
+            remainder = len(b64_str) % 4
+            if remainder:
+                padding_needed = 4 - remainder
+                b64_str = b64_str + ('=' * padding_needed)
+                print(f"[DEBUG] Added {padding_needed} padding chars, retrying...")
+                try:
+                    signed_txn_bytes = base64.b64decode(b64_str, validate=False)
+                    print(f"[DEBUG] ✅ Decoded successfully after padding")
+                except Exception as padded_err:
+                    print(f"[ERROR] Decode failed even with padding: {str(padded_err)}")
+                    # Try without validation at all
+                    print(f"[DEBUG] Attempting decode without validation...")
+                    try:
+                        signed_txn_bytes = base64.b64decode(b64_str)
+                        print(f"[DEBUG] ✅ Decoded with fallback method")
+                    except Exception as fallback_err:
+                        raise ValueError(f"All Base64 decode attempts failed: {str(fallback_err)}")
+            else:
+                raise ValueError(f"Base64 decode failed and no padding needed: {str(first_attempt_err)}")
         
-        print(f"[DEBUG] Signed txn bytes length: {len(signed_txn_bytes)}")
+        print(f"[DEBUG] Decoded signed txn bytes length: {len(signed_txn_bytes)}")
         print(f"[DEBUG] First 20 bytes (hex): {signed_txn_bytes[:20].hex()}")
         
-        # Validate that we have a reasonable transaction size (typically 200-500 bytes)
-        if len(signed_txn_bytes) < 50:
-            raise ValueError(f"Transaction too small ({len(signed_txn_bytes)} bytes) - likely corrupt")
-        
-        if len(signed_txn_bytes) > 10000:
-            raise ValueError(f"Transaction too large ({len(signed_txn_bytes)} bytes) - likely corrupt")
-        
-        # Submit to testnet - the bytes are already msgpack-encoded by Pera wallet
-        print(f"[DEBUG] Submitting {len(signed_txn_bytes)} bytes to testnet...")
-        
-        # The Pera wallet returns msgpack-encoded signed transaction bytes
-        # Validate the msgpack encoding to ensure it's not double-encoded
-        try:
-            from algosdk import encoding
-            decoded_txn = encoding.msgpack_decode(signed_txn_bytes)
-            print(f"[DEBUG] Msgpack validation successful")
-        except Exception as validate_err:
-            print(f"[DEBUG] Msgpack validation warning: {str(validate_err)}")
-        
-        # Send the msgpack-encoded bytes to the blockchain
-        # Use send_transaction which handles msgpack-encoded bytes correctly
-        txn_id = algod_client.send_transaction(signed_txn_bytes)
-        print(f"[DEBUG] Transaction submitted with ID: {txn_id}")
-        
-        # Wait for confirmation (max 10 rounds)
-        confirmed_txn = None
-        for i in range(10):
-            try:
-                confirmed_txn = algod_client.pending_transaction_info(txn_id)
-                if confirmed_txn.get("confirmed-round"):
-                    print(f"[DEBUG] Transaction confirmed in round {confirmed_txn.get('confirmed-round')}")
-                    break
-            except Exception as poll_err:
-                print(f"[DEBUG] Poll attempt {i} failed: {str(poll_err)}")
-            
-            time.sleep(1)
-        
-        if not confirmed_txn:
-            raise ValueError(f"Transaction {txn_id} timed out after 10 rounds")
-            
-        if "asset-index" not in confirmed_txn:
-            # Transaction might have failed but was still included in a block
-            print(f"[ERROR] Confirmed txn details: {confirmed_txn}")
-            raise ValueError(f"Transaction {txn_id} failed - no asset-index in confirmed transaction")
-        
-        # Extract the real ASA ID from the confirmed transaction
-        asa_id = confirmed_txn["asset-index"]
-        print(f"[DEBUG] ASA created with ID: {asa_id}")
-        
-        return asa_id
-        
-    except ValueError as e:
-        print(f"[ERROR] ValueError: {str(e)}")
-        raise ValueError(str(e))
+    except (ValueError, TypeError) as decode_err:
+        print(f"[ERROR] Base64 decode failed: {type(decode_err).__name__}: {str(decode_err)}")
+        print(f"[ERROR] Input was: {str(signed_txn_base64)[:100]}...")
+        print(f"[ERROR] Full input length: {len(signed_txn_base64)}")
+        raise ValueError(f"Invalid Base64 encoding: {str(decode_err)}")
+    
+    # Validate msgpack encoding before submission
+    try:
+        from algosdk import encoding
+        decoded_txn = encoding.msgpack_decode(signed_txn_bytes)
+        print(f"[DEBUG] ✅ Msgpack validation successful")
+    except Exception as validate_err:
+        print(f"[DEBUG] Msgpack validation warning: {str(validate_err)}")
+
+    # CRITICAL: send_raw_transaction() expects a Base64-encoded STRING, not raw bytes!
+    # It will base64-decode internally, so we pass the Base64 string we already have
+    print(f"[DEBUG] Converting raw bytes back to Base64 for send_raw_transaction()...")
+    b64_for_submission = base64.b64encode(signed_txn_bytes).decode('utf-8')
+    print(f"[DEBUG] Base64 for submission length: {len(b64_for_submission)}")
+    
+    # Submit using send_raw_transaction which will base64-decode it internally
+    try:
+        txn_id = algod_client.send_raw_transaction(b64_for_submission)
+        print(f"[DEBUG] ✅ Transaction submitted with ID: {txn_id}")
+    except AlgodHTTPError as e:
+        print(f"[ERROR] Algorand node rejected transaction: {str(e)}")
+        raise ValueError(f"Algorand node rejected transaction: {e}")
     except Exception as e:
-        print(f"[ERROR] Exception type: {type(e).__name__}, Message: {str(e)}")
-        raise ValueError(f"Failed to submit ASA to blockchain: {str(e)}")
+        print(f"[ERROR] Unexpected error submitting transaction: {type(e).__name__}: {str(e)}")
+        raise ValueError(f"Failed to submit transaction: {str(e)}")
+
+    # Wait for confirmation (max 10 rounds)
+    confirmed_txn = None
+    for i in range(10):
+        try:
+            confirmed_txn = algod_client.pending_transaction_info(txn_id)
+            if confirmed_txn.get("confirmed-round"):
+                print(f"[DEBUG] Confirmed in round {confirmed_txn['confirmed-round']}")
+                break
+        except Exception as poll_err:
+            print(f"[DEBUG] Poll attempt {i} failed: {poll_err}")
+        time.sleep(1)
+
+    if not confirmed_txn:
+        raise ValueError(f"Transaction {txn_id} timed out after 10 rounds")
+
+    if "asset-index" not in confirmed_txn:
+        raise ValueError("Transaction failed – no asset-index in confirmation")
+
+    asa_id = confirmed_txn["asset-index"]
+    print(f"[DEBUG] ASA created with ID: {asa_id}")
+    return asa_id

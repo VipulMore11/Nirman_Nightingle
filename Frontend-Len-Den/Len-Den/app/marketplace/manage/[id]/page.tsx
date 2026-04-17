@@ -1,14 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { mockAssets } from '@/lib/data/mockAssets';
-import { currentUser } from '@/lib/data/mockUsers';
+import { Asset, getAssets, getAssetById } from '@/lib/services/blockchainService';
 import { formatCurrency, formatPercent } from '@/lib/utils/formatters';
 import {
   ArrowLeft,
@@ -31,6 +30,7 @@ import {
   Briefcase,
   History,
   Lock,
+  Loader2,
 } from 'lucide-react';
 
 /* ── Asset Management Page ── */
@@ -38,23 +38,32 @@ export default function ManageAssetPage() {
   const params = useParams();
   const router = useRouter();
   const assetId = params.id as string;
-  let asset = mockAssets.find(a => a.id === assetId);
-
-  // Fallback for newly created demo assets that aren't in the static mockAssets list
-  if (!asset && assetId.startsWith('asset-')) {
-    asset = {
-      ...mockAssets[0],
-      id: assetId,
-      name: `New Asset ${assetId.split('-')[1]}`,
-      totalValue: 1000000,
-      totalUnits: 10000,
-      unitsAvailable: 10000,
-    };
-  }
-
+  
+  const [asset, setAsset] = useState<Asset | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'discussion' | 'holders' | 'settings'>('discussion');
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  
+  useEffect(() => {
+    const fetchAsset = async () => {
+      try {
+        setLoading(true);
+        const data = await getAssetById(assetId);
+        setAsset(data);
+      } catch (err) {
+        console.error('Failed to fetch asset:', err);
+        setError('Asset not found or failed to load');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (assetId) {
+      fetchAsset();
+    }
+  }, [assetId]);
   
   const [proposals, setProposals] = useState([
     {
@@ -79,13 +88,21 @@ export default function ManageAssetPage() {
     },
   ]);
 
-  if (!asset) {
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  if (!asset || error) {
     return (
       <div className="p-8 text-center">
         <Button variant="outline" onClick={() => router.back()} className="mb-6">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </Button>
-        <p>Asset not found</p>
+        <p>{error || 'Asset not found'}</p>
       </div>
     );
   }
@@ -132,16 +149,16 @@ export default function ManageAssetPage() {
             <span>/</span>
             <span className="font-medium text-foreground">Manage Asset</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight">{asset.name}</h1>
+          <h1 className="text-4xl font-black tracking-tight">{asset.title}</h1>
           <div className="flex items-center gap-4 text-sm">
-            <Badge variant="outline" className="bg-accent/5">{asset.category.toUpperCase()}</Badge>
+            <Badge variant="outline" className="bg-accent/5">Asset</Badge>
             <div className="flex items-center gap-1 text-muted-foreground">
               <History className="w-4 h-4" />
-              Listed on Jan 12, 2024
+              Listed on {new Date(asset.listed_at || asset.created_at).toLocaleDateString()}
             </div>
-            <div className="flex items-center gap-1 text-green-600 font-semibold">
-              <CheckCircle className="w-4 h-4" />
-              Active Listing
+            <div className={`flex items-center gap-1 font-semibold ${asset.is_verified ? 'text-green-600' : 'text-yellow-600'}`}>
+              {asset.is_verified ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+              {asset.is_verified ? 'Verified' : 'Pending Verification'}
             </div>
           </div>
         </div>
@@ -161,10 +178,10 @@ export default function ManageAssetPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Value', value: formatCurrency(asset.totalValue), icon: DollarSign, color: 'text-accent' },
-          { label: 'Capital Raised', value: formatCurrency(asset.totalValue * 0.72), icon: TrendingUp, color: 'text-green-500' },
+          { label: 'Total Value', value: formatCurrency(asset.total_supply * asset.unit_price), icon: DollarSign, color: 'text-accent' },
+          { label: 'Capital Raised', value: formatCurrency((asset.total_supply - asset.available_supply) * asset.unit_price), icon: TrendingUp, color: 'text-green-500' },
           { label: 'Unique Holders', value: '142', icon: Users, color: 'text-blue-500' },
-          { label: 'Active Proposals', value: proposals.filter(p => p.status === 'VOTING').length.toString(), icon: MessageSquare, color: 'text-yellow-500' },
+          { label: 'Active Proposals', value: proposals.filter((p: any) => p.status === 'VOTING').length.toString(), icon: MessageSquare, color: 'text-yellow-500' },
         ].map((stat, i) => (
           <Card key={i} className="p-5 border-border bg-card hover:border-accent/30 transition-colors shadow-sm">
             <div className="flex justify-between items-start mb-2">
@@ -222,12 +239,12 @@ export default function ManageAssetPage() {
         <div className="lg:col-span-3">
           {activeTab === 'discussion' && (
             <SellerDiscussionView 
-              assetTitle={asset.name} 
+              assetTitle={asset.title} 
               proposals={proposals} 
               onCreateClick={() => setShowProposalModal(true)} 
             />
           )}
-          {activeTab === 'holders' && <AssetHoldersView totalUnits={asset.totalUnits} />}
+          {activeTab === 'holders' && <AssetHoldersView totalUnits={asset.total_supply} />}
           {activeTab === 'settings' && <ListingDetailsView asset={asset} />}
         </div>
       </div>
@@ -236,7 +253,7 @@ export default function ManageAssetPage() {
 }
 
 /* ── Modal: Create Proposal ── */
-function CreateProposalModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (t: string, d: string) => void }) {
+function CreateProposalModal({ onClose, onSubmit }: { readonly onClose: () => void; readonly onSubmit: (t: string, d: string) => void }) {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
 
@@ -249,12 +266,13 @@ function CreateProposalModal({ onClose, onSubmit }: { onClose: () => void; onSub
         </div>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-bold">Proposal Title</label>
-            <Input placeholder="e.g. Upgrade Lobby Security" value={title} onChange={e => setTitle(e.target.value)} />
+            <label htmlFor="proposal-title" className="text-sm font-bold">Proposal Title</label>
+            <Input id="proposal-title" placeholder="e.g. Upgrade Lobby Security" value={title} onChange={e => setTitle(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-bold">Detailed Description</label>
+            <label htmlFor="proposal-desc" className="text-sm font-bold">Detailed Description</label>
             <textarea 
+              id="proposal-desc"
               className="w-full h-32 rounded-lg border border-border bg-background p-3 text-sm focus:ring-2 focus:ring-accent outline-none" 
               placeholder="What changes are you proposing and why?"
               value={desc}
@@ -272,7 +290,7 @@ function CreateProposalModal({ onClose, onSubmit }: { onClose: () => void; onSub
 }
 
 /* ── Modal: Asset Settings ── */
-function AssetSettingsModal({ asset, onClose }: { asset: any; onClose: () => void }) {
+function AssetSettingsModal({ asset, onClose }: { readonly asset: Asset; readonly onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
       <Card className="w-full max-w-md p-6 shadow-2xl border-border">
@@ -313,54 +331,49 @@ function AssetSettingsModal({ asset, onClose }: { asset: any; onClose: () => voi
 }
 
 /* ── Subcomponent: Listing Details View ── */
-function ListingDetailsView({ asset }: { asset: any }) {
-  const [data, setData] = useState({ ...asset });
-
+function ListingDetailsView({ asset }: { readonly asset: Asset }) {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div>
         <h2 className="text-2xl font-black">Listing Details</h2>
-        <p className="text-sm text-muted-foreground">Manage the public information shown on the marketplace</p>
+        <p className="text-sm text-muted-foreground">Public information displayed on the marketplace</p>
       </div>
 
       <Card className="p-8 border-border bg-card shadow-sm space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Asset Name</label>
-            <Input value={data.name} onChange={e => setData({...data, name: e.target.value})} />
+            <label htmlFor="asset-title" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Asset Title</label>
+            <Input id="asset-title" value={asset.title} disabled />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Location</label>
-            <Input value={data.location} onChange={e => setData({...data, location: e.target.value})} />
+            <label htmlFor="unit-price" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Price Per Unit ($)</label>
+            <Input id="unit-price" type="number" value={asset.unit_price} disabled />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Price Per Unit ($)</label>
-            <Input type="number" value={data.pricePerUnit} onChange={e => setData({...data, pricePerUnit: Number(e.target.value)})} />
+            <label htmlFor="total-supply" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Total Units</label>
+            <Input id="total-supply" type="number" value={asset.total_supply} disabled />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Target ROI (%)</label>
-            <Input type="number" value={data.expectedAnnualROI} onChange={e => setData({...data, expectedAnnualROI: Number(e.target.value)})} />
+            <label htmlFor="available-supply" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Available Units</label>
+            <Input id="available-supply" type="number" value={asset.available_supply} disabled />
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Market Description</label>
+          <label htmlFor="description" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Description</label>
           <Textarea 
+            id="description"
             className="w-full h-40 rounded-xl border border-border bg-background p-4 text-sm focus:ring-2 focus:ring-accent outline-none"
-            value="This prime real estate asset offers stable long-term yields through established corporate leases. Located in the heart of the business district, the Mumbai Tech Park is a premium office complex serving major international firms. Recent structural upgrades and green building certifications ensure future-proof value."
-            onChange={() => {}}
+            value={asset.description}
+            disabled
           />
-        </div>
-        <div className="flex gap-3">
-          <Button className="bg-accent hover:bg-accent/90" onClick={() => alert('Listing updated successfully!')}>Update Marketplace Info</Button>
-          <Button variant="outline">Discard Changes</Button>
         </div>
       </Card>
 
-      <div className="p-6 rounded-2xl bg-orange-50 border border-orange-100 flex gap-4">
-        <AlertTriangle className="w-6 h-6 text-orange-600 shrink-0" />
+      <div className="p-6 rounded-2xl bg-green-50 border border-green-100 flex gap-4">
+        <CheckCircle className="w-6 h-6 text-green-600 shrink-0" />
         <div className="space-y-1">
-          <p className="text-sm font-bold text-orange-800">Review Required</p>
-          <p className="text-xs text-orange-700 leading-relaxed">Changes to Name or Category require a quick re-verification by the platform compliance team. Other edits go live immediately.</p>
+          <p className="text-sm font-bold text-green-800">Asset Details</p>
+          <p className="text-xs text-green-700 leading-relaxed">Asset listing details are set during creation and displayed on the marketplace.</p>
         </div>
       </div>
     </div>
@@ -368,7 +381,7 @@ function ListingDetailsView({ asset }: { asset: any }) {
 }
 
 /* ── Subcomponent: Discussion View ── */
-function SellerDiscussionView({ assetTitle, proposals, onCreateClick }: { assetTitle: string; proposals: any[]; onCreateClick: () => void }) {
+function SellerDiscussionView({ assetTitle, proposals, onCreateClick }: { readonly assetTitle: string; readonly proposals: any[]; readonly onCreateClick: () => void }) {
   const [activeProposalId, setActiveProposalId] = useState<number | null>(null);
   const [showVoters, setShowVoters] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -641,7 +654,7 @@ function SellerDiscussionView({ assetTitle, proposals, onCreateClick }: { assetT
 }
 
 /* ── Subcomponent: Asset Holders View ── */
-function AssetHoldersView({ totalUnits }: { totalUnits: number }) {
+function AssetHoldersView({ totalUnits }: { readonly totalUnits: number }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const holders = [

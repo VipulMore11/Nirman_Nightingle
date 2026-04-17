@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { API_ENDPOINTS } from '@/lib/constants/apiConfig';
+import { getAuthHeader } from '@/lib/utils/authService';
 import {
   ArrowLeft,
   Upload,
@@ -21,6 +23,7 @@ import {
   Clock,
   CheckCircle2,
   Users,
+  Loader2,
 } from 'lucide-react';
 
 const STEPS = [
@@ -32,19 +35,20 @@ const STEPS = [
 export default function ListAssetPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    name: '',
+    title: '',
     category: 'real-estate',
-    location: '',
     description: '',
-    totalValue: '',
-    totalUnits: '',
-    pricePerUnit: '',
-    expectedROI: '',
-    riskScore: '5',
-    // Files
-    images: [] as string[],
-    documents: [] as { name: string; type: string }[],
+    totalSupply: '',
+    unitPrice: '',
+    creatorWallet: '',
+    // Files - stored as File objects
+    imageFiles: [] as File[],
+    documentFiles: [] as File[],
+    // Image previews for UI only
+    imagePreviews: [] as string[],
   });
 
   const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, STEPS.length));
@@ -53,16 +57,107 @@ export default function ListAssetPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-      setFormData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
+      const newFiles = Array.from(files);
+      const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+      setFormData(prev => ({ 
+        ...prev, 
+        imageFiles: [...prev.imageFiles, ...newFiles],
+        imagePreviews: [...prev.imagePreviews, ...newPreviews]
+      }));
     }
   };
 
   const removeImage = (index: number) => {
+    // Revoke the object URL
+    URL.revokeObjectURL(formData.imagePreviews[index]);
     setFormData(prev => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      imageFiles: prev.imageFiles.filter((_, i) => i !== index),
+      imagePreviews: prev.imagePreviews.filter((_, i) => i !== index)
     }));
+  };
+
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setFormData(prev => ({
+        ...prev,
+        documentFiles: [...prev.documentFiles, ...Array.from(files)]
+      }));
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setError('');
+      setIsSubmitting(true);
+
+      // Validation
+      if (!formData.title.trim()) throw new Error('Asset title is required');
+      if (!formData.description.trim()) throw new Error('Description is required');
+      if (!formData.totalSupply) throw new Error('Total supply is required');
+      if (!formData.unitPrice) throw new Error('Unit price is required');
+      if (!formData.creatorWallet.trim()) throw new Error('Creator wallet address is required');
+
+      // Create FormData for multipart request
+      const fd = new FormData();
+      fd.append('title', formData.title);
+      fd.append('description', formData.description);
+      fd.append('total_supply', formData.totalSupply);
+      fd.append('unit_price', formData.unitPrice);
+      fd.append('creator_wallet', formData.creatorWallet);
+
+      // Add metadata (category)
+      const metadata = JSON.stringify({
+        category: formData.category
+      });
+      fd.append('metadata_json', metadata);
+
+      // Add image files and names
+      if (formData.imageFiles.length > 0) {
+        formData.imageFiles.forEach((file) => {
+          fd.append('property_image_files', file);
+        });
+        const imageNames = formData.imageFiles.map((_, idx) => `image_${idx + 1}`);
+        fd.append('property_image_names', JSON.stringify(imageNames));
+      }
+
+      // Add document files and names
+      if (formData.documentFiles.length > 0) {
+        formData.documentFiles.forEach((file) => {
+          fd.append('legal_document_files', file);
+        });
+        const docNames = formData.documentFiles.map((file) => file.name.split('.')[0]);
+        fd.append('legal_document_names', JSON.stringify(docNames));
+      }
+
+      // Submit to API
+      const response = await fetch(`${API_ENDPOINTS.CREATE_ASSET}`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(),
+          // DO NOT set Content-Type - browser will set it with boundary
+        },
+        body: fd,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(Object.values(errorData)[0] as string || 'Failed to create asset');
+      }
+
+      const result = await response.json();
+      
+      alert('Asset created successfully!');
+      // Redirect to asset details or marketplace
+      router.push(`/marketplace/listings/${result.id}`);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create asset';
+      setError(errorMsg);
+      console.error('Asset creation error:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderStep = () => {
@@ -72,15 +167,15 @@ export default function ListAssetPage() {
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Asset Name</label>
+                <label className="text-sm font-medium">Asset Title *</label>
                 <Input 
                   placeholder="e.g. Downtown Luxury Apartments" 
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Category</label>
+                <label className="text-sm font-medium">Category *</label>
                 <select 
                   className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   value={formData.category}
@@ -94,43 +189,34 @@ export default function ListAssetPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Location</label>
+                <label className="text-sm font-medium">Creator Wallet Address *</label>
                 <Input 
-                  placeholder="City, Country" 
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  placeholder="0x..." 
+                  value={formData.creatorWallet}
+                  onChange={(e) => setFormData({...formData, creatorWallet: e.target.value})}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Expected Annual ROI (%)</label>
-                <Input 
-                  type="number" 
-                  placeholder="e.g. 12" 
-                  value={formData.expectedROI}
-                  onChange={(e) => setFormData({...formData, expectedROI: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Total Asset Value ($)</label>
+                <label className="text-sm font-medium">Unit Price ($) *</label>
                 <Input 
                   type="number" 
-                  placeholder="e.g. 1000000" 
-                  value={formData.totalValue}
-                  onChange={(e) => setFormData({...formData, totalValue: e.target.value})}
+                  placeholder="e.g. 100" 
+                  value={formData.unitPrice}
+                  onChange={(e) => setFormData({...formData, unitPrice: e.target.value})}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Total Fractional Units</label>
+                <label className="text-sm font-medium">Total Supply (Units) *</label>
                 <Input 
                   type="number" 
                   placeholder="e.g. 10000" 
-                  value={formData.totalUnits}
-                  onChange={(e) => setFormData({...formData, totalUnits: e.target.value})}
+                  value={formData.totalSupply}
+                  onChange={(e) => setFormData({...formData, totalSupply: e.target.value})}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
+              <label className="text-sm font-medium">Description *</label>
               <textarea 
                 className="w-full h-32 px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
                 placeholder="Detailed description of the asset..."
@@ -147,13 +233,13 @@ export default function ListAssetPage() {
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-accent/10 transition-colors">
                 <Upload className="w-8 h-8 text-muted-foreground group-hover:text-accent" />
               </div>
-              <p className="font-medium">Click to upload photos</p>
+              <p className="font-medium">Click to upload property photos</p>
               <p className="text-sm text-muted-foreground mt-1">PNG, JPG or WebP (max. 5MB each)</p>
               <input type="file" multiple className="hidden" onChange={handleImageUpload} accept="image/*" />
             </label>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {formData.images.map((src, idx) => (
+              {formData.imagePreviews.map((src, idx) => (
                 <div key={idx} className="aspect-video bg-muted rounded-lg border border-border flex items-center justify-center relative group overflow-hidden">
                   <img src={src} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
                   <button 
@@ -164,7 +250,7 @@ export default function ListAssetPage() {
                   </button>
                 </div>
               ))}
-              {formData.images.length === 0 && (
+              {formData.imagePreviews.length === 0 && (
                 <div className="aspect-video bg-muted/50 rounded-lg border border-border border-dashed flex items-center justify-center">
                   <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
                 </div>
@@ -175,47 +261,35 @@ export default function ListAssetPage() {
       case 3:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-green-500" />
-                  Legal & Ownership Docs
-                </h3>
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-accent transition-colors cursor-pointer bg-muted/30">
-                  <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-xs font-medium">Upload Title Deed, LLC Docs, etc.</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-500" />
-                  Previous Owner Records
-                </h3>
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-accent transition-colors cursor-pointer bg-muted/30">
-                  <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-xs font-medium">Upload Historical Appraisal/Maintenance records</p>
-                </div>
-              </div>
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold flex items-center gap-2">
+                <Shield className="w-4 h-4 text-green-500" />
+                Legal & Supporting Documents
+              </h3>
+              <label className="block border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-accent transition-colors cursor-pointer bg-muted/30">
+                <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                <p className="text-xs font-medium">Click to upload documents</p>
+                <p className="text-xs text-muted-foreground mt-1">Title Deed, LLC Docs, Appraisals, etc. (PDF, DOC)</p>
+                <input type="file" multiple className="hidden" onChange={handleDocumentUpload} accept=".pdf,.doc,.docx" />
+              </label>
             </div>
 
-            <div className="space-y-2">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase">Uploaded Documents</h4>
+            {formData.documentFiles.length > 0 && (
               <div className="space-y-2">
-                {[
-                  { name: 'Title_Deed_Property_X.pdf', size: '2.4 MB' },
-                  { name: 'LLC_Registration_Cert.pdf', size: '1.2 MB' },
-                ].map((doc, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-4 h-4 text-accent" />
-                      <span className="text-sm font-medium">{doc.name}</span>
+                <h4 className="text-xs font-bold text-muted-foreground uppercase">Uploaded Documents</h4>
+                <div className="space-y-2">
+                  {Array.from(formData.documentFiles).map((doc, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-4 h-4 text-accent" />
+                        <span className="text-sm font-medium">{doc.name}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{(doc.size / 1024 / 1024).toFixed(2)} MB</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{doc.size}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         );
       default:
@@ -270,6 +344,12 @@ export default function ListAssetPage() {
       {/* Form Content */}
       <Card className="border-border bg-card shadow-xl overflow-hidden">
         <div className="p-8">
+          {error && (
+            <div className="mb-6 flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <p>{error}</p>
+            </div>
+          )}
           {renderStep()}
         </div>
         
@@ -277,26 +357,31 @@ export default function ListAssetPage() {
           <Button 
             variant="outline" 
             onClick={handleBack} 
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || isSubmitting}
           >
             Previous Step
           </Button>
           
           {currentStep === STEPS.length ? (
             <Button 
-              className="bg-accent hover:bg-accent/90 px-8 gap-2 animate-pulse"
-              onClick={() => {
-                const mockNewId = `asset-${Math.floor(Math.random() * 1000)}`;
-                alert('Asset created successfully! Now let\'s set up your governance forum.');
-                router.push(`/marketplace/setup-discussion/${mockNewId}`);
-              }}
+              className="bg-accent hover:bg-accent/90 px-8 gap-2 disabled:opacity-50"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
             >
-              Finish & List Asset
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating Asset...
+                </>
+              ) : (
+                'Finish & List Asset'
+              )}
             </Button>
           ) : (
             <Button 
               className="bg-accent hover:bg-accent/90 px-8"
               onClick={handleNext}
+              disabled={isSubmitting}
             >
               Continue
             </Button>

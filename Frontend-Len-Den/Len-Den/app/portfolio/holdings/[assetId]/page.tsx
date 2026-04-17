@@ -1,13 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockAssets } from '@/lib/data/mockAssets';
-import { currentUser } from '@/lib/data/mockUsers';
+import { Asset, getAssetById } from '@/lib/services/blockchainService';
 import { formatCurrency, formatPercent } from '@/lib/utils/formatters';
 import {
   ArrowLeft,
@@ -36,6 +35,7 @@ import {
   Home,
   ShieldCheck,
   Percent,
+  Loader2,
 } from 'lucide-react';
 
 /* ── Photo sets ── */
@@ -181,28 +181,54 @@ export default function HoldingDetailPage() {
   const router = useRouter();
   const assetId = params.assetId as string;
 
-  const asset = mockAssets.find((a) => a.id === assetId);
-  const holding = currentUser.portfolio.find((h) => h.assetId === assetId);
+  const [asset, setAsset] = useState<Asset | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchAsset = async () => {
+      try {
+        setLoading(true);
+        const data = await getAssetById(assetId);
+        setAsset(data);
+      } catch (err) {
+        console.error('Failed to fetch asset:', err);
+        setError('Asset not found or failed to load');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (assetId) {
+      fetchAsset();
+    }
+  }, [assetId]);
 
   const [activeTab, setActiveTab] = useState<Tab>('details');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{ idx: number; value: number; x: number } | null>(null);
 
-  if (!asset || !holding) {
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  if (!asset || error) {
     return (
       <div className="p-8 text-center">
         <Button variant="outline" onClick={() => router.back()} className="mb-6">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Portfolio
         </Button>
-        <p className="text-muted-foreground">Holding not found</p>
+        <p className="text-muted-foreground">{error || 'Holding not found'}</p>
       </div>
     );
   }
 
-  const photos = CATEGORY_PHOTOS[asset.category] ?? CATEGORY_PHOTOS['real-estate'];
-  const [heroPhoto, ...restPhotos] = photos;
-  const currentValue = holding.unitsOwned * holding.unitPrice;
-  const certId = `CERT-${assetId.toUpperCase()}-${currentUser.id.toUpperCase()}-2024`;
+  // Get photos from asset.property_images, fallback to first image or placeholder
+  const photos = asset.property_images?.map(img => img.url) ?? (asset.thumbnail_url ? [asset.thumbnail_url] : []);
 
   /* ── Render ── */
   return (
@@ -219,17 +245,26 @@ export default function HoldingDetailPage() {
         </Button>
 
         {/* ── Photo Gallery ── */}
-        <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[380px] rounded-2xl overflow-hidden mb-3">
-          <div className="col-span-2 row-span-2 relative cursor-pointer group" onClick={() => setLightboxIndex(0)}>
-            <img src={heroPhoto} alt="Main" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
-          </div>
-          {restPhotos.slice(0, 4).map((p, i) => (
-            <div key={i} className="relative cursor-pointer group overflow-hidden" onClick={() => setLightboxIndex(i + 1)}>
-              <img src={p} alt="" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+        <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[380px] rounded-2xl overflow-hidden mb-3 bg-muted">
+          {photos.length > 0 ? (
+            <>
+              <div className="col-span-2 row-span-2 relative cursor-pointer group overflow-hidden" onClick={() => setLightboxIndex(0)}>
+                <img src={photos[0]} alt="Main" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+              </div>
+              {photos.slice(1, 5).map((p, i) => (
+                <div key={i} className="relative cursor-pointer group overflow-hidden" onClick={() => setLightboxIndex(i + 1)}>
+                  <img src={p} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="col-span-4 row-span-2 flex items-center justify-center text-muted-foreground">
+              <Images className="w-8 h-8" />
+              <span className="ml-2">No photos available</span>
             </div>
-          ))}
+          )}
         </div>
 
         {/* View all photos pill */}
@@ -265,26 +300,20 @@ export default function HoldingDetailPage() {
                   <CheckCircle className="w-3 h-3" /> You Hold This Asset
                 </Badge>
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{asset.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{asset.title}</h1>
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <MapPin className="w-4 h-4 shrink-0" />
-                {asset.location}
+                <FileText className="w-4 h-4 shrink-0" />
+                Fractional Ownership Asset
               </div>
 
-              <div className="grid grid-cols-3 gap-4 mt-5 p-4 rounded-xl bg-card border border-border">
+              <div className="grid grid-cols-2 gap-4 mt-5 p-4 rounded-xl bg-card border border-border">
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Your Units</p>
-                  <p className="text-lg font-bold text-accent">{holding.unitsOwned.toLocaleString()}</p>
-                </div>
-                <div className="text-center border-x border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Current Value</p>
-                  <p className="text-lg font-bold">{formatCurrency(currentValue)}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Unit Price</p>
+                  <p className="text-lg font-bold text-accent">{formatCurrency(asset.unit_price)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Ownership %</p>
-                  <p className="text-lg font-bold text-green-600">
-                    {((holding.unitsOwned / asset.totalUnits) * 100).toFixed(3)}%
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-1">Total Supply</p>
+                  <p className="text-lg font-bold">{asset.total_supply.toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -292,10 +321,10 @@ export default function HoldingDetailPage() {
             {/* Attribute chips */}
             <div className="flex flex-wrap gap-3">
               {[
-                { icon: Building2, label: asset.category === 'real-estate' ? 'Real Estate' : asset.category },
-                { icon: Users, label: `${asset.unitsAvailable.toLocaleString()} units available` },
-                { icon: Calendar, label: `${asset.dividendFrequency} dividends` },
-                { icon: Shield, label: `Risk ${asset.riskScore}/10` },
+                { icon: Building2, label: 'Asset Listing' },
+                { icon: Users, label: `${asset.available_supply.toLocaleString()} units available` },
+                { icon: Calendar, label: `Listed ${new Date(asset.listed_at || asset.created_at).toLocaleDateString()}` },
+                { icon: Shield, label: asset.is_verified ? 'Verified' : 'Pending Verification' },
               ].map(chip => (
                 <div key={chip.label} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted border border-border text-sm font-medium">
                   <chip.icon className="w-4 h-4 text-muted-foreground" />
@@ -328,30 +357,15 @@ export default function HoldingDetailPage() {
               <div className="space-y-6">
                 <Card className="p-6 border-border bg-card">
                   <h2 className="text-xl font-bold mb-4">About This Asset</h2>
-                  <p className="text-muted-foreground leading-relaxed">{asset.description_long}</p>
-                </Card>
-
-                <Card className="p-6 border-border bg-card">
-                  <h2 className="text-xl font-bold mb-4">Offering Details</h2>
-                  <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                    {[
-                      'The property deed is held in a compliant LLC structure; you hold direct equity tokens.',
-                      `Each token represents fractional ownership of the ${asset.category === 'real-estate' ? 'property' : 'asset'} and its associated income.`,
-                      'Dividends are distributed every ' + asset.dividendFrequency + ' directly to your connected wallet.',
-                      'This offering complies with securities regulations in the jurisdiction of ' + asset.location + '.',
-                      'You can sell or transfer your units on the secondary marketplace at any time.',
-                    ].map((pt, i) => (
-                      <li key={i} className="flex gap-2"><span className="text-accent font-bold shrink-0">•</span>{pt}</li>
-                    ))}
-                  </ul>
+                  <p className="text-muted-foreground leading-relaxed">{asset.description}</p>
                 </Card>
 
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: 'Expected ROI', value: formatPercent(asset.expectedAnnualROI), icon: TrendingUp, color: 'green' },
-                    { label: 'Risk Score', value: `${asset.riskScore}/10`, icon: Shield, color: 'blue' },
-                    { label: 'Dividend Frequency', value: asset.dividendFrequency, icon: Calendar, color: 'purple' },
-                    { label: 'Total Available', value: asset.unitsAvailable.toLocaleString(), icon: Layers, color: 'orange' },
+                    { label: 'Unit Price', value: formatCurrency(asset.unit_price), icon: DollarSign, color: 'green' },
+                    { label: 'Total Supply', value: asset.total_supply.toLocaleString(), icon: Layers, color: 'blue' },
+                    { label: 'Available Units', value: asset.available_supply.toLocaleString(), icon: Users, color: 'purple' },
+                    { label: 'Status', value: asset.is_verified ? 'Verified' : 'Pending', icon: CheckCircle, color: asset.is_verified ? 'green' : 'orange' },
                   ].map(m => {
                     const Icon = m.icon;
                     const cls: Record<string, string> = {
@@ -473,7 +487,7 @@ export default function HoldingDetailPage() {
                     <div className="flex items-end gap-0.5 h-32">
                       {Array.from({ length: 30 }, (_, i) => {
                         const h = 45 + Math.sin(i * 0.7) * 22 + (i % 5) * 3;
-                        const val = Math.round(asset.pricePerUnit * (1 + Math.sin(i * 0.7) * 0.1));
+                        const val = Math.round(asset.unit_price * (1 + Math.sin(i * 0.7) * 0.1));
                         return (
                           <div key={i} className={`flex-1 rounded-t cursor-pointer transition-all ${hoveredBar?.idx === i ? 'bg-accent' : 'bg-accent/50 hover:bg-accent/80'}`}
                             style={{ height: `${h}%` }}

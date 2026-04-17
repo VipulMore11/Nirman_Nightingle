@@ -5,10 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {InvestmentModal} from '@/components/marketplace/InvestmentModal';
+// import {InvestmentModal} from '@/components/marketplace/InvestmentModal';
 import { API_ENDPOINTS } from '@/lib/constants/apiConfig';
 import type { Asset } from '@/lib/services/blockchainService';
-import { Badge } from '@/components/ui/badge';]
+import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatPercent } from '@/lib/utils/formatters';
 import {
   ArrowLeft,
@@ -36,6 +36,9 @@ import {
   LandPlot,
   TrendingDown,
   HandCoins,
+  FileText,     
+  Download,     
+  Calendar      
 } from 'lucide-react';
 
 /* ─── mock photo sets per category ─── */
@@ -172,6 +175,7 @@ export default function AssetDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [investmentAmount, setInvestmentAmount] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('details');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{ idx: number; value: number; x: number } | null>(null);
@@ -252,11 +256,11 @@ export default function AssetDetailsPage() {
     );
   }
 
-  const photos = CATEGORY_PHOTOS[asset.category] ?? CATEGORY_PHOTOS['real-estate'];
-  const [heroPhoto, ...restPhotos] = photos;
+  const photos = asset.property_images?.map(img => img.url) ?? (asset.thumbnail_url ? [asset.thumbnail_url] : []);
+  const [heroPhoto, ...restPhotos] = photos.length > 0 ? photos : ['https://via.placeholder.com/800x600?text=No+Image'];
 
-  const unitsToInvest = investmentAmount ? Math.floor(Number(investmentAmount) / asset.pricePerUnit) : 0;
-  const annualDiv = (unitsToInvest * asset.pricePerUnit * asset.expectedAnnualROI) / 100;
+  const unitsToInvest = investmentAmount ? Math.floor(Number(investmentAmount) / asset.unit_price) : 0;
+  const annualDiv = (unitsToInvest * asset.unit_price * 0.08); // 8% demo ROI
 
   return (
     <>
@@ -337,30 +341,30 @@ export default function AssetDetailsPage() {
             {/* Asset Header Info */}
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <Badge variant="outline" className="capitalize text-xs">{asset.category}</Badge>
-                <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs gap-1">
-                  <CheckCircle className="w-3 h-3" /> Active Offering
+                <Badge variant="outline" className="capitalize text-xs">Asset</Badge>
+                <Badge className={`${asset.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} hover:bg-opacity-100 text-xs gap-1`}>
+                  <CheckCircle className="w-3 h-3" /> {asset.is_verified ? 'Verified' : 'Pending'}
                 </Badge>
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{asset.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{asset.title}</h1>
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <MapPin className="w-4 h-4 shrink-0" />
-                {asset.location}
+                <Building2 className="w-4 h-4 shrink-0" />
+                Fractionalized Asset on Blockchain
               </div>
 
               {/* Quick stat row */}
               <div className="grid grid-cols-3 gap-4 mt-5 p-4 rounded-xl bg-card border border-border">
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-1">Total Value</p>
-                  <p className="text-lg font-bold">{formatCurrency(asset.totalValue)}</p>
+                  <p className="text-lg font-bold">{formatCurrency(asset.total_supply * asset.unit_price)}</p>
                 </div>
                 <div className="text-center border-x border-border">
                   <p className="text-xs text-muted-foreground mb-1">Price / Unit</p>
-                  <p className="text-lg font-bold">{formatCurrency(asset.pricePerUnit)}</p>
+                  <p className="text-lg font-bold">{formatCurrency(asset.unit_price)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Expected ROI</p>
-                  <p className="text-lg font-bold text-green-600">+{asset.expectedAnnualROI}%</p>
+                  <p className="text-xs text-muted-foreground mb-1">Available</p>
+                  <p className="text-lg font-bold text-accent">{asset.available_supply.toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -368,10 +372,10 @@ export default function AssetDetailsPage() {
             {/* ── Property attribute chips ── */}
             <div className="flex flex-wrap gap-3">
               {[
-                { icon: Building2, label: asset.category === 'real-estate' ? 'Commercial Real Estate' : asset.category },
-                { icon: Users, label: `${asset.unitsAvailable.toLocaleString()} units available` },
-                { icon: Calendar, label: `${asset.dividendFrequency} dividends` },
-                { icon: Shield, label: `Risk ${asset.riskScore}/10` },
+                { icon: Building2, label: 'Fractionalized Asset' },
+                { icon: Users, label: `${asset.available_supply.toLocaleString()} units available` },
+                { icon: Clock, label: `Created ${new Date(asset.created_at).toLocaleDateString()}` },
+                { icon: Shield, label: asset.is_verified ? 'Verified' : 'Pending' },
               ].map((chip) => (
                 <div
                   key={chip.label}
@@ -412,7 +416,7 @@ export default function AssetDetailsPage() {
                 {/* About */}
                 <Card className="p-6 border-border bg-card">
                   <h2 className="text-xl font-bold mb-4">About This Asset</h2>
-                  <p className="text-muted-foreground leading-relaxed">{asset.description_long}</p>
+                  <p className="text-muted-foreground leading-relaxed">{asset.description}</p>
                 </Card>
 
                 {/* Offering Details */}
@@ -421,23 +425,23 @@ export default function AssetDetailsPage() {
                   <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
                     <li className="flex gap-2">
                       <span className="text-accent font-bold shrink-0">•</span>
-                      The property deed has been transferred to a new LLC structure; investors receive direct LLC equity tokens.
+                      This asset has been fractionalized into {asset.total_supply.toLocaleString()} equal units on the blockchain.
                     </li>
                     <li className="flex gap-2">
                       <span className="text-accent font-bold shrink-0">•</span>
-                      Each token represents fractional ownership of the {asset.category === 'real-estate' ? 'property' : 'asset'} and its associated income.
+                      Each token represents fractional ownership and entitlement to proportional income distribution.
                     </li>
                     <li className="flex gap-2">
                       <span className="text-accent font-bold shrink-0">•</span>
-                      Minimum 10% ownership is maintained by the managing entity indefinitely.
+                      Ownership is backed by cryptographic verification on the Algorand blockchain.
                     </li>
                     <li className="flex gap-2">
                       <span className="text-accent font-bold shrink-0">•</span>
-                      Dividends are distributed every {asset.dividendFrequency} directly to token holders' wallets.
+                      Units can be traded or transferred on the secondary marketplace at any time.
                     </li>
                     <li className="flex gap-2">
                       <span className="text-accent font-bold shrink-0">•</span>
-                      This offering complies with applicable securities regulations in the jurisdiction of {asset.location}.
+                      This offering has been reviewed and {asset.is_verified ? 'verified' : 'is pending verification'} for compliance.
                     </li>
                   </ul>
                 </Card>
@@ -518,10 +522,10 @@ export default function AssetDetailsPage() {
                 {/* Key metrics */}
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: 'Expected Annual ROI', value: formatPercent(asset.expectedAnnualROI), icon: TrendingUp, color: 'green' },
-                    { label: 'Risk Score', value: `${asset.riskScore}/10`, icon: Shield, color: 'blue' },
-                    { label: 'Dividend Frequency', value: asset.dividendFrequency, icon: Calendar, color: 'purple' },
-                    { label: 'Units Available', value: asset.unitsAvailable.toLocaleString(), icon: Layers, color: 'orange' },
+                    { label: 'Unit Price', value: formatCurrency(asset.unit_price), icon: DollarSign, color: 'green' },
+                    { label: 'Total Supply', value: asset.total_supply.toLocaleString(), icon: Layers, color: 'blue' },
+                    { label: 'Available Units', value: asset.available_supply.toLocaleString(), icon: Users, color: 'purple' },
+                    { label: 'Total Value', value: formatCurrency(asset.total_supply * asset.unit_price), icon: TrendingUp, color: 'orange' },
                   ].map((m) => {
                     const Icon = m.icon;
                     const colors: Record<string, string> = {
@@ -568,12 +572,12 @@ export default function AssetDetailsPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: 'Total Asset Value', value: formatCurrency(asset.totalValue), icon: DollarSign },
-                    { label: 'Price Per Unit', value: formatCurrency(asset.pricePerUnit), icon: Percent },
-                    { label: 'Total Units', value: asset.totalUnits.toLocaleString(), icon: Layers },
-                    { label: 'Units Available', value: asset.unitsAvailable.toLocaleString(), icon: Users },
-                    { label: 'Annual ROI', value: `${asset.expectedAnnualROI}%`, icon: TrendingUp },
-                    { label: 'Next Dividend', value: asset.nextDividendDate, icon: Calendar },
+                    { label: 'Total Asset Value', value: formatCurrency(asset.total_supply * asset.unit_price), icon: DollarSign },
+                    { label: 'Price Per Unit', value: formatCurrency(asset.unit_price), icon: Percent },
+                    { label: 'Total Units', value: asset.total_supply.toLocaleString(), icon: Layers },
+                    { label: 'Units Available', value: asset.available_supply.toLocaleString(), icon: Users },
+                    { label: 'Owner Email', value: asset.owner_email || 'N/A', icon: Users },
+                    { label: 'Listed', value: new Date(asset.listed_at || asset.created_at).toLocaleDateString(), icon: Calendar },
                   ].map((row) => {
                     const Icon = row.icon;
                     return (
@@ -591,22 +595,22 @@ export default function AssetDetailsPage() {
                 {/* Funding progress */}
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Funding Progress</span>
+                    <span className="text-muted-foreground">Units Sold</span>
                     <span className="font-semibold">
-                      {Math.round(((asset.totalUnits - asset.unitsAvailable) / asset.totalUnits) * 100)}% funded
+                      {Math.round(((asset.total_supply - asset.available_supply) / asset.total_supply) * 100)}% sold
                     </span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-3">
                     <div
                       className="h-3 rounded-full bg-accent transition-all"
                       style={{
-                        width: `${((asset.totalUnits - asset.unitsAvailable) / asset.totalUnits) * 100}%`,
+                        width: `${((asset.total_supply - asset.available_supply) / asset.total_supply) * 100}%`,
                       }}
                     />
                   </div>
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>{(asset.totalUnits - asset.unitsAvailable).toLocaleString()} units sold</span>
-                    <span>{asset.unitsAvailable.toLocaleString()} units remaining</span>
+                    <span>{(asset.total_supply - asset.available_supply).toLocaleString()} units sold</span>
+                    <span>{asset.available_supply.toLocaleString()} units remaining</span>
                   </div>
                 </div>
               </Card>
@@ -678,7 +682,7 @@ export default function AssetDetailsPage() {
 
                     <div className="flex items-end gap-0.5 h-36">
                       {Array.from({ length: 30 }, (_, i) => {
-                        const base = asset.pricePerUnit;
+                        const base = asset.unit_price;
                         const fluctuation = Math.sin(i * 0.7) * 0.12 + (i / 30) * 0.05;
                         const h = 45 + Math.sin(i * 0.7) * 22 + (i % 5) * 3;
                         const priceValue = Math.round(base * (1 + fluctuation));
@@ -715,7 +719,7 @@ export default function AssetDetailsPage() {
                     {[
                       {
                         label: '24h Volume',
-                        value: formatCurrency(asset.pricePerUnit * 850),
+                        value: formatCurrency(asset.unit_price * 850),
                         icon: BarChart3,
                         sub: 'traded today',
                         color: 'blue',
@@ -730,42 +734,42 @@ export default function AssetDetailsPage() {
                       },
                       {
                         label: 'All-time High',
-                        value: formatCurrency(asset.pricePerUnit * 1.18),
+                        value: formatCurrency(asset.unit_price * 1.18),
                         icon: TrendingUp,
                         sub: 'since listing',
                         color: 'purple',
                       },
                       {
                         label: 'All-time Low',
-                        value: formatCurrency(asset.pricePerUnit * 0.84),
+                        value: formatCurrency(asset.unit_price * 0.84),
                         icon: TrendingDown,
                         sub: 'since listing',
                         color: 'red',
                       },
                       {
                         label: 'Current Asset Value',
-                        value: formatCurrency(asset.totalValue),
+                        value: formatCurrency(asset.unit_price * asset.total_supply),
                         icon: DollarSign,
                         sub: 'total portfolio worth',
                         color: 'blue',
                       },
                       {
                         label: 'Owner Ask Price',
-                        value: formatCurrency(asset.pricePerUnit * 1.04),
+                        value: formatCurrency(asset.unit_price * 1.04),
                         icon: HandCoins,
                         sub: 'per unit ask by owner',
                         color: 'orange',
                       },
                       {
                         label: 'Total Land Market Rate',
-                        value: formatCurrency(asset.totalValue * 1.07),
+                        value: formatCurrency(asset.unit_price * asset.total_supply * 1.07),
                         icon: LandPlot,
                         sub: 'current govt. circle rate',
                         color: 'green',
                       },
                       {
                         label: 'Market Value / Unit',
-                        value: formatCurrency(asset.pricePerUnit * 1.07),
+                        value: formatCurrency(asset.unit_price * 1.07),
                         icon: UserCheck,
                         sub: 'based on circle rate',
                         color: 'purple',
@@ -821,7 +825,7 @@ export default function AssetDetailsPage() {
                             owner: 'Current LLC (LenDen)',
                             acquired: '2023',
                             sold: '—',
-                            price: formatCurrency(asset.totalValue),
+                            price: formatCurrency(asset.unit_price * asset.total_supply),
                             mode: 'Direct Purchase',
                             remarks: 'Active listing on platform',
                           },
@@ -829,7 +833,7 @@ export default function AssetDetailsPage() {
                             owner: 'Anand Constructions Pvt. Ltd.',
                             acquired: '2018',
                             sold: '2023',
-                            price: formatCurrency(asset.totalValue * 0.82),
+                            price: formatCurrency(asset.unit_price * asset.total_supply * 0.82),
                             mode: 'Sale Deed',
                             remarks: 'Clear title; registered at Sub-Registrar',
                           },
@@ -837,7 +841,7 @@ export default function AssetDetailsPage() {
                             owner: 'Mumbai Municipal Trust',
                             acquired: '2009',
                             sold: '2018',
-                            price: formatCurrency(asset.totalValue * 0.55),
+                            price: formatCurrency(asset.unit_price * asset.total_supply * 0.55),
                             mode: 'Auction',
                             remarks: 'Auctioned post recovery proceedings',
                           },
@@ -845,7 +849,7 @@ export default function AssetDetailsPage() {
                             owner: 'Rajkumar Mehta (Individual)',
                             acquired: '1995',
                             sold: '2009',
-                            price: formatCurrency(asset.totalValue * 0.28),
+                            price: formatCurrency(asset.unit_price * asset.total_supply * 0.28),
                             mode: 'Inheritance',
                             remarks: 'Transferred via registered will',
                           },
@@ -882,8 +886,8 @@ export default function AssetDetailsPage() {
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                     <Input
                       type="number"
-                      min={asset.pricePerUnit}
-                      step={asset.pricePerUnit}
+                      min={asset.unit_price}
+                      step={asset.unit_price}
                       value={investmentAmount}
                       onChange={(e) => setInvestmentAmount(e.target.value)}
                       className="pl-8"
@@ -900,7 +904,7 @@ export default function AssetDetailsPage() {
                     </div>
                     <div className="flex justify-between border-t border-border pt-2">
                       <span className="text-muted-foreground">Total Cost:</span>
-                      <span className="font-semibold">{formatCurrency(unitsToInvest * asset.pricePerUnit)}</span>
+                      <span className="font-semibold">{formatCurrency(unitsToInvest * asset.unit_price)}</span>
                     </div>
                   </div>
                 )}
